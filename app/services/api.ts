@@ -2,7 +2,23 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { API_BASE_URL, API_ENDPOINTS } from '../constants/api';
 import { STORAGE_KEYS } from '../constants/auth';
 import { APP_ROUTES } from '../constants/routes';
-import type { UserRole } from '../constants/roles';
+import type {
+  ApiResponse,
+  LoginCredentials,
+  OrganizationCreateData,
+  OrganizationResponse,
+  OrganizationUpdateData,
+  RegisterAdminData,
+  RegisterOrganizationAdminData,
+  RegisterSuperAdminData,
+  SchoolCreateData,
+  SchoolResponse,
+  SchoolUpdateData,
+  TokenResponse,
+  UserCreateData,
+  UserResponse,
+  UserUpdateData,
+} from '../types';
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -39,140 +55,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// Types
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterAdminData {
-  user: {
-    email: string;
-    full_name: string;
-    password: string;
-  };
-  school: {
-    name: string;
-    address: string;
-  };
-}
-
-export interface RegisterSuperAdminData {
-  email: string;
-  full_name: string;
-  password: string;
-}
-
-export interface RegisterOrganizationAdminData {
-  organization: {
-    name: string;
-    slug: string;
-    contact_email?: string;
-    phone?: string;
-    address?: string;
-  };
-  admin: {
-    email: string;
-    full_name: string;
-    password: string;
-  };
-}
-
-export interface TokenResponse {
-  access_token: string;
-  token_type: string;
-  role: UserRole;
-  organization_id?: number;
-  permissions: string[];
-}
-
-export interface UserResponse {
-  id: number;
-  email: string;
-  full_name: string;
-  role: UserRole;
-  organization_id?: number;
-  school_id?: number;
-  is_active: boolean;
-  created_at: string;
-  permissions: string[];
-}
-
-export interface UserCreateData {
-  email: string;
-  full_name: string;
-  password: string;
-  role?: UserRole;
-  organization_id?: number | null;
-  school_id?: number | null;
-}
-
-export interface UserUpdateData {
-  full_name?: string;
-  role?: UserRole;
-  organization_id?: number | null;
-  school_id?: number | null;
-  is_active?: boolean;
-}
-
-export interface OrganizationResponse {
-  id: number;
-  name: string;
-  slug: string;
-  contact_email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  subscription_status: string;
-  is_active: boolean;
-  created_by_id?: number | null;
-  created_at: string;
-}
-
-export interface OrganizationCreateData {
-  name: string;
-  slug: string;
-  contact_email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-}
-
-export interface OrganizationUpdateData {
-  name?: string;
-  slug?: string;
-  contact_email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  subscription_status?: string;
-  is_active?: boolean;
-}
-
-export interface SchoolResponse {
-  id: number;
-  name: string;
-  address?: string | null;
-  organization_id?: number | null;
-  is_active: boolean;
-}
-
-export interface SchoolCreateData {
-  name: string;
-  address?: string | null;
-  organization_id?: number | null;
-}
-
-export interface SchoolUpdateData {
-  name?: string;
-  address?: string | null;
-  organization_id?: number | null;
-  is_active?: boolean;
-}
-
-export interface ApiResponse<T> {
-  data: T;
-  message: string;
-  success: boolean;
-}
 
 // Auth API
 export const login = (credentials: LoginCredentials): Promise<AxiosResponse<ApiResponse<TokenResponse>>> => {

@@ -3,7 +3,13 @@ import { isAxiosError } from 'axios';
 import { AUTH_ERROR_MESSAGES, STORAGE_KEYS } from '../../constants/auth';
 import type { UserRole } from '../../constants/roles';
 import * as api from '../../services/api';
-import type { LoginCredentials, RegisterAdminData, RegisterSuperAdminData, RegisterOrganizationAdminData, UserResponse } from '../../services/api';
+import type {
+  LoginCredentials,
+  RegisterAdminData,
+  RegisterOrganizationAdminData,
+  RegisterSuperAdminData,
+  UserResponse,
+} from '../../types';
 
 interface ApiErrorPayload {
   detail?: string;
