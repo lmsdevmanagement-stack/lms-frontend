@@ -485,6 +485,8 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         title="Manage Admin Permissions"
         description={permissionTarget ? `Set individual access for ${permissionTarget.name}.` : 'Set individual admin access.'}
         onClose={() => setPermissionTarget(null)}
+        size="wide"
+        bodyClassName="p-0"
       >
         {permissionTarget && (
           <PermissionsMatrix
