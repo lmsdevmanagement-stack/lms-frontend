@@ -33,12 +33,12 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     | { type: 'teacher'; row: TeacherRow }
     | null
   >(null);
-  const { user, role, isAuthenticated, isSuperAdmin, organizationId, handleLogout } = useDashboardAuth();
-  const crud = useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, enabled: isAuthenticated });
+  const { user, role, isAuthenticated, isSuperAdmin, organizationId, schoolId, handleLogout } = useDashboardAuth();
+  const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated });
   const stats: StatCard[] = [
     { label: 'Schools', value: String(crud.schools.length), description: isSuperAdmin ? 'All organizations' : 'Your organization' },
     { label: 'Teachers', value: String(crud.teachers.length), description: isSuperAdmin ? 'Across all schools' : 'Your teachers' },
-    { label: 'Students', value: String(crud.students.length), description: 'Backend endpoint pending' },
+    { label: 'Students', value: String(crud.students.length), description: isSuperAdmin ? 'Across all schools' : 'Your students' },
     {
       label: 'Blocked',
       value: String([...crud.schools, ...crud.teachers].filter((row) => row.status === 'blocked').length),
@@ -138,7 +138,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
     }
     if (initialSection === 'students') {
-      return <DataTable title="Students" description="Student backend endpoint will be implemented next." columns={studentColumns} data={crud.students} loading={crud.loading} />;
+      return <DataTable title="Students" description="Students scoped to the selected school or organization." columns={studentColumns} data={crud.students} loading={crud.loading} />;
     }
     if (initialSection === 'permissions' || initialSection === 'settings') {
       return (
@@ -160,7 +160,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         <StatsGrid stats={stats} />
         <DataTable title="Organizations / Schools" columns={schoolColumns} data={crud.schools} loading={crud.loading} />
         <DataTable title="Teachers" columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
-        <DataTable title="Students" columns={studentColumns} data={crud.students} loading={crud.loading} emptyMessage="Student backend endpoint pending." />
+        <DataTable title="Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
       </div>
     );
   };
