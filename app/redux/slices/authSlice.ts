@@ -202,10 +202,16 @@ const authSlice = createSlice({
       .addCase(getCurrentUser.fulfilled, (state, action: PayloadAction<{ data: UserResponse }>) => {
         state.loading = false;
         state.user = action.payload.data;
+        state.role = action.payload.data.role;
+        state.organizationId = action.payload.data.organization_id || null;
+        state.permissions = action.payload.data.permissions;
+        state.isAuthenticated = true;
+        state.error = null;
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.isAuthenticated = false;
       })
       // Logout
       .addCase(logout.fulfilled, (state) => {

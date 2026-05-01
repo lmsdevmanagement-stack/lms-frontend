@@ -21,3 +21,12 @@ export type {
   UserResponse,
   UserUpdateData,
 } from './users';
+export type {
+  DashboardSection,
+  DataTableColumn,
+  NavigationItem,
+  SchoolRow,
+  StatCard,
+  StudentRow,
+  TeacherRow,
+} from './dashboard';
