@@ -98,6 +98,7 @@ function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): Teach
         email: teacher.email,
         school: school?.name || 'Unassigned',
         subject: 'General',
+        permissions: teacher.permissions || [],
         status: teacher.is_active ? 'active' : 'blocked',
       };
     });
@@ -134,6 +135,7 @@ function mapStudentRows(users: UserResponse[], schools: SchoolResponse[]): Stude
         email: student.email,
         school: school?.name || 'Unassigned',
         className: 'Unassigned',
+        permissions: student.permissions || [],
         status: student.is_active ? 'active' : 'blocked',
       };
     });
@@ -434,6 +436,16 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const saveTeacherPermissions = async (teacher: TeacherRow, permissions: string[]) => {
+    setSaving(true);
+    try {
+      await api.updateUser(teacher.id, { permissions });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openCreateStudentModal = () => {
     setEditingStudentId(null);
     setStudentForm({
@@ -503,6 +515,16 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const saveStudentPermissions = async (student: StudentRow, permissions: string[]) => {
+    setSaving(true);
+    try {
+      await api.updateUser(student.id, { permissions });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     schools: scopedSchools,
     schoolAdmins: scopedSchoolAdmins,
@@ -548,10 +570,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     saveTeacher,
     deleteTeacher,
     toggleTeacherBlock,
+    saveTeacherPermissions,
     openCreateStudentModal,
     openEditStudentModal,
     saveStudent,
     deleteStudent,
     toggleStudentBlock,
+    saveStudentPermissions,
   };
 }
