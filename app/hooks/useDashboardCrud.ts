@@ -98,6 +98,7 @@ function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): Teach
         email: teacher.email,
         school: school?.name || 'Unassigned',
         subject: 'General',
+        permissions: teacher.permissions || [],
         status: teacher.is_active ? 'active' : 'blocked',
       };
     });
@@ -115,6 +116,7 @@ function mapSchoolAdminRows(users: UserResponse[], schools: SchoolResponse[]): S
         name: admin.full_name,
         email: admin.email,
         school: school?.name || 'Unassigned',
+        permissions: admin.permissions || [],
         status: admin.is_active ? 'active' : 'blocked',
       };
     });
@@ -133,6 +135,7 @@ function mapStudentRows(users: UserResponse[], schools: SchoolResponse[]): Stude
         email: student.email,
         school: school?.name || 'Unassigned',
         className: 'Unassigned',
+        permissions: student.permissions || [],
         status: student.is_active ? 'active' : 'blocked',
       };
     });
@@ -354,6 +357,16 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const saveSchoolAdminPermissions = async (admin: SchoolAdminRow, permissions: string[]) => {
+    setSaving(true);
+    try {
+      await api.updateUser(admin.id, { permissions });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openCreateTeacherModal = () => {
     setEditingTeacherId(null);
     setTeacherForm({
@@ -417,6 +430,16 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setSaving(true);
     try {
       await api.updateUser(teacher.id, { is_active: teacher.status === 'blocked' });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveTeacherPermissions = async (teacher: TeacherRow, permissions: string[]) => {
+    setSaving(true);
+    try {
+      await api.updateUser(teacher.id, { permissions });
       await loadDashboardData();
     } finally {
       setSaving(false);
@@ -492,6 +515,16 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const saveStudentPermissions = async (student: StudentRow, permissions: string[]) => {
+    setSaving(true);
+    try {
+      await api.updateUser(student.id, { permissions });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     schools: scopedSchools,
     schoolAdmins: scopedSchoolAdmins,
@@ -531,15 +564,18 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     saveSchoolAdmin,
     deleteSchoolAdmin,
     toggleSchoolAdminBlock,
+    saveSchoolAdminPermissions,
     openCreateTeacherModal,
     openEditTeacherModal,
     saveTeacher,
     deleteTeacher,
     toggleTeacherBlock,
+    saveTeacherPermissions,
     openCreateStudentModal,
     openEditStudentModal,
     saveStudent,
     deleteStudent,
     toggleStudentBlock,
+    saveStudentPermissions,
   };
 }

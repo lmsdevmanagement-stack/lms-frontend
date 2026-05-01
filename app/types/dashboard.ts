@@ -46,6 +46,7 @@ export interface TeacherRow {
   email: string;
   school: string;
   subject: string;
+  permissions: string[];
   status: 'active' | 'blocked';
 }
 
@@ -56,6 +57,7 @@ export interface SchoolAdminRow {
   name: string;
   email: string;
   school: string;
+  permissions: string[];
   status: 'active' | 'blocked';
 }
 
@@ -67,6 +69,7 @@ export interface StudentRow {
   email: string;
   school: string;
   className: string;
+  permissions: string[];
   status: 'active' | 'blocked';
 }
 

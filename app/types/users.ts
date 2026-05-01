@@ -26,5 +26,6 @@ export interface UserUpdateData {
   role?: UserRole;
   organization_id?: number | null;
   school_id?: number | null;
+  permissions?: string[];
   is_active?: boolean;
 }

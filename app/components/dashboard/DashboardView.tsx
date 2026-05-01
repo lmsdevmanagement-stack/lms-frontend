@@ -36,6 +36,12 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     | { type: 'student'; row: StudentRow }
     | null
   >(null);
+  const [permissionTarget, setPermissionTarget] = useState<
+    | ({ type: 'school-admin'; row: SchoolAdminRow } & Pick<SchoolAdminRow, 'name' | 'school' | 'email' | 'permissions'>)
+    | ({ type: 'teacher'; row: TeacherRow } & Pick<TeacherRow, 'name' | 'school' | 'email' | 'permissions'>)
+    | ({ type: 'student'; row: StudentRow } & Pick<StudentRow, 'name' | 'school' | 'email' | 'permissions'>)
+    | null
+  >(null);
   const { user, role, isAuthenticated, isSuperAdmin, organizationId, schoolId, handleLogout } = useDashboardAuth();
   const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated });
   const stats: StatCard[] = isSuperAdmin ? [
@@ -98,6 +104,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setPermissionTarget({ type: 'teacher', row, name: row.name, school: row.school, email: row.email, permissions: row.permissions })}>Permissions</Button>
           <Button variant="ghost">Password</Button>
           <Button variant="ghost" onClick={() => crud.openEditTeacherModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleTeacherBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
@@ -126,6 +133,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setPermissionTarget({ type: 'school-admin', row, name: row.name, school: row.school, email: row.email, permissions: row.permissions })}>Permissions</Button>
           <Button variant="ghost" onClick={() => crud.openEditSchoolAdminModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleSchoolAdminBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
           <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'school-admin', row })}>Delete</Button>
@@ -154,6 +162,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setPermissionTarget({ type: 'student', row, name: row.name, school: row.school, email: row.email, permissions: row.permissions })}>Permissions</Button>
           <Button variant="ghost">Password</Button>
           <Button variant="ghost" onClick={() => crud.openEditStudentModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleStudentBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
@@ -256,6 +265,28 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         )}
       </div>
     );
+  };
+
+  const permissionSection = permissionTarget?.type === 'school-admin'
+    ? 'admin-permissions'
+    : permissionTarget?.type === 'teacher'
+      ? 'teacher-permissions'
+      : 'student-permissions';
+  const permissionModalTitle = permissionTarget?.type === 'school-admin'
+    ? 'Manage Admin Permissions'
+    : permissionTarget?.type === 'teacher'
+      ? 'Manage Teacher Permissions'
+      : 'Manage Student Permissions';
+  const saveTargetPermissions = async (permissions: string[]) => {
+    if (!permissionTarget) return;
+    if (permissionTarget.type === 'school-admin') {
+      await crud.saveSchoolAdminPermissions(permissionTarget.row, permissions);
+    } else if (permissionTarget.type === 'teacher') {
+      await crud.saveTeacherPermissions(permissionTarget.row, permissions);
+    } else {
+      await crud.saveStudentPermissions(permissionTarget.row, permissions);
+    }
+    setPermissionTarget(null);
   };
 
   return (
@@ -476,6 +507,26 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             </Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={permissionTarget !== null}
+        title={permissionModalTitle}
+        description={permissionTarget ? `Set individual access for ${permissionTarget.row.name}.` : 'Set individual access.'}
+        onClose={() => setPermissionTarget(null)}
+        size="wide"
+        bodyClassName="p-0"
+      >
+        {permissionTarget && (
+          <PermissionsMatrix
+            section={permissionSection}
+            title={permissionTarget.row.name}
+            description={`${permissionTarget.school} · ${permissionTarget.email}`}
+            value={permissionTarget.row.permissions}
+            saving={crud.saving}
+            onSave={saveTargetPermissions}
+          />
+        )}
       </Modal>
 
       <Modal
