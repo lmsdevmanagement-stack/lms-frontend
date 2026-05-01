@@ -3,4 +3,5 @@ export const APP_ROUTES = {
   login: '/login',
   register: '/register',
   registeredLogin: '/login?registered=true',
+  dashboardSection: (section: string) => `/dashboard/${section}`,
 } as const;
