@@ -33,12 +33,12 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     | { type: 'teacher'; row: TeacherRow }
     | null
   >(null);
-  const { user, role, isAuthenticated, isSuperAdmin, organizationId, handleLogout } = useDashboardAuth();
-  const crud = useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, enabled: isAuthenticated });
+  const { user, role, isAuthenticated, isSuperAdmin, organizationId, schoolId, handleLogout } = useDashboardAuth();
+  const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated });
   const stats: StatCard[] = [
     { label: 'Schools', value: String(crud.schools.length), description: isSuperAdmin ? 'All organizations' : 'Your organization' },
     { label: 'Teachers', value: String(crud.teachers.length), description: isSuperAdmin ? 'Across all schools' : 'Your teachers' },
-    { label: 'Students', value: String(crud.students.length), description: 'Backend endpoint pending' },
+    { label: 'Students', value: String(crud.students.length), description: isSuperAdmin ? 'Across all schools' : 'Your students' },
     {
       label: 'Blocked',
       value: String([...crud.schools, ...crud.teachers].filter((row) => row.status === 'blocked').length),
@@ -57,6 +57,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openCreateSchoolAdminModal(row)}>Add Admin</Button>
           <Button variant="ghost" onClick={() => crud.openEditSchoolModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleSchoolBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
           <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'school', row })}>Delete</Button>
@@ -137,7 +138,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
     }
     if (initialSection === 'students') {
-      return <DataTable title="Students" description="Student backend endpoint will be implemented next." columns={studentColumns} data={crud.students} loading={crud.loading} />;
+      return <DataTable title="Students" description="Students scoped to the selected school or organization." columns={studentColumns} data={crud.students} loading={crud.loading} />;
     }
     if (initialSection === 'permissions' || initialSection === 'settings') {
       return (
@@ -159,7 +160,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         <StatsGrid stats={stats} />
         <DataTable title="Organizations / Schools" columns={schoolColumns} data={crud.schools} loading={crud.loading} />
         <DataTable title="Teachers" columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
-        <DataTable title="Students" columns={studentColumns} data={crud.students} loading={crud.loading} emptyMessage="Student backend endpoint pending." />
+        <DataTable title="Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
       </div>
     );
   };
@@ -264,6 +265,46 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => crud.setTeacherModalOpen(false)}>Cancel</Button>
             <Button onClick={crud.saveTeacher} disabled={crud.saving}>{crud.editingTeacherId ? 'Save Changes' : 'Create Teacher'}</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={crud.schoolAdminModalOpen}
+        title="Create School Admin"
+        description="Add an admin user for this school. The admin will be scoped to the selected organization."
+        onClose={() => crud.setSchoolAdminModalOpen(false)}
+      >
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Full Name
+            <Input
+              value={crud.schoolAdminForm.fullName}
+              onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, fullName: event.target.value })}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Email
+            <Input
+              type="email"
+              value={crud.schoolAdminForm.email}
+              onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, email: event.target.value })}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Password
+            <Input
+              type="password"
+              value={crud.schoolAdminForm.password}
+              onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, password: event.target.value })}
+              placeholder="Password123!"
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" disabled={crud.saving} onClick={() => crud.setSchoolAdminModalOpen(false)}>Cancel</Button>
+            <Button onClick={crud.saveSchoolAdmin} disabled={crud.saving || !crud.schoolAdminForm.fullName || !crud.schoolAdminForm.email}>
+              {crud.saving ? 'Creating...' : 'Create Admin'}
+            </Button>
           </div>
         </div>
       </Modal>

@@ -34,6 +34,7 @@ export function useDashboardAuth() {
     isAuthenticated,
     isSuperAdmin: role === USER_ROLES.superAdmin,
     organizationId: user?.organization_id || 1,
+    schoolId: user?.school_id || null,
     handleLogout,
   };
 }
