@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { USER_ROLES } from '../constants/roles';
 import * as api from '../services/api';
-import type { SchoolResponse, SchoolRow, TeacherRow, UserResponse } from '../types';
+import type { SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
 export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
@@ -41,6 +41,7 @@ export const emptySchoolAdminForm: SchoolAdminFormState = {
 interface UseDashboardCrudArgs {
   isSuperAdmin: boolean;
   organizationId: number;
+  schoolId: number | null;
   searchTerm: string;
   enabled: boolean;
 }
@@ -57,7 +58,8 @@ function mapSchoolRows(schools: SchoolResponse[], users: UserResponse[]): School
   return schools.map((school) => {
     const schoolUsers = users.filter((user) => user.school_id === school.id);
     const orgUsers = users.filter((user) => user.organization_id === school.organization_id);
-    const admin = orgUsers.find((user) => user.role === USER_ROLES.admin);
+    const admin = orgUsers.find((user) => user.role === USER_ROLES.admin && user.school_id === school.id)
+      || orgUsers.find((user) => user.role === USER_ROLES.admin);
     return {
       id: school.id,
       organizationId: school.organization_id || 0,
@@ -89,9 +91,28 @@ function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): Teach
     });
 }
 
-export function useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, enabled }: UseDashboardCrudArgs) {
+function mapStudentRows(users: UserResponse[], schools: SchoolResponse[]): StudentRow[] {
+  return users
+    .filter((user) => user.role === USER_ROLES.student)
+    .map((student) => {
+      const school = schools.find((item) => item.id === student.school_id);
+      return {
+        id: student.id,
+        organizationId: student.organization_id || 0,
+        schoolId: student.school_id || 0,
+        name: student.full_name,
+        email: student.email,
+        school: school?.name || 'Unassigned',
+        className: 'Unassigned',
+        status: student.is_active ? 'active' : 'blocked',
+      };
+    });
+}
+
+export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled }: UseDashboardCrudArgs) {
   const [schoolRows, setSchoolRows] = useState<SchoolRow[]>([]);
   const [teacherRows, setTeacherRows] = useState<TeacherRow[]>([]);
+  const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
   const [schoolModalOpen, setSchoolModalOpen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
   const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
@@ -114,10 +135,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, ena
       const users = usersResponse.data.data;
       setSchoolRows(mapSchoolRows(schools, users));
       setTeacherRows(mapTeacherRows(users, schools));
+      setStudentRows(mapStudentRows(users, schools));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data');
       setSchoolRows([]);
       setTeacherRows([]);
+      setStudentRows([]);
     } finally {
       setLoading(false);
     }
@@ -131,14 +154,22 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, ena
   }, [loadDashboardData]);
 
   const scopedSchools = useMemo(() => {
-    const scopedRows = isSuperAdmin ? schoolRows : schoolRows.filter((row) => row.organizationId === organizationId);
+    const orgRows = isSuperAdmin ? schoolRows : schoolRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.id === schoolId) : orgRows;
     return filterBySearch(scopedRows, searchTerm);
-  }, [isSuperAdmin, organizationId, schoolRows, searchTerm]);
+  }, [isSuperAdmin, organizationId, schoolId, schoolRows, searchTerm]);
 
   const scopedTeachers = useMemo(() => {
-    const scopedRows = isSuperAdmin ? teacherRows : teacherRows.filter((row) => row.organizationId === organizationId);
+    const orgRows = isSuperAdmin ? teacherRows : teacherRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
     return filterBySearch(scopedRows, searchTerm);
-  }, [isSuperAdmin, organizationId, teacherRows, searchTerm]);
+  }, [isSuperAdmin, organizationId, schoolId, teacherRows, searchTerm]);
+
+  const scopedStudents = useMemo(() => {
+    const orgRows = isSuperAdmin ? studentRows : studentRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [isSuperAdmin, organizationId, schoolId, studentRows, searchTerm]);
 
   const openCreateSchoolModal = () => {
     setEditingSchoolId(null);
@@ -298,7 +329,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, ena
   return {
     schools: scopedSchools,
     teachers: scopedTeachers,
-    students: [],
+    students: scopedStudents,
     loading,
     saving,
     error,
