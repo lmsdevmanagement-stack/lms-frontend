@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { registerAdmin, clearError } from '../redux/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import { Loader2, GraduationCap, Building, User } from 'lucide-react';
+import { APP_ROUTES } from '../constants/routes';
 import Input from './Input';
 import type { RootState, AppDispatch } from '../redux/store';
 
@@ -42,7 +43,7 @@ export default function Register() {
   const { loading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   if (isAuthenticated) {
-    router.push('/dashboard');
+    router.push(APP_ROUTES.dashboard);
     return null;
   }
 
@@ -63,7 +64,7 @@ export default function Register() {
     try {
       const result = await dispatch(registerAdmin(formData));
       if (registerAdmin.fulfilled.match(result)) {
-        router.push('/login?registered=true');
+        router.push(APP_ROUTES.registeredLogin);
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -186,7 +187,7 @@ export default function Register() {
           <div className="mt-6 text-center">
             <p className="text-slate-400">
               Already have an account?{' '}
-              <a href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium transition">
+              <a href={APP_ROUTES.login} className="text-indigo-400 hover:text-indigo-300 font-medium transition">
                 Sign in
               </a>
             </p>

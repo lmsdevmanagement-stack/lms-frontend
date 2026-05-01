@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { LogOut, User, Shield, GraduationCap, Building2, Calendar, DollarSign, Users2, TrendingUp } from 'lucide-react';
 import { useDispatch } from 'react-redux';
+import { APP_ROUTES } from '../constants/routes';
 import { AppDispatch, RootState } from '../redux/store';
 import { logout } from '../redux/slices/authSlice';
 
@@ -23,13 +24,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push(APP_ROUTES.login);
     }
   }, [isAuthenticated, router]);
 
   const handleLogout = () => {
     dispatch(logout());
-    router.push('/login');
+    router.push(APP_ROUTES.login);
   };
 
   if (!isAuthenticated) {

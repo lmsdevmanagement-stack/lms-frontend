@@ -1,11 +1,34 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { isAxiosError } from 'axios';
+import { AUTH_ERROR_MESSAGES, STORAGE_KEYS } from '../../constants/auth';
+import type { UserRole } from '../../constants/roles';
 import * as api from '../../services/api';
-import type { LoginCredentials, RegisterAdminData, RegisterSuperAdminData, RegisterOrganizationAdminData, UserResponse, TokenResponse } from '../../services/api';
+import type {
+  LoginCredentials,
+  RegisterAdminData,
+  RegisterOrganizationAdminData,
+  RegisterSuperAdminData,
+  UserResponse,
+} from '../../types';
+
+interface ApiErrorPayload {
+  detail?: string;
+  message?: string;
+  error?: string;
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (isAxiosError<ApiErrorPayload>(error)) {
+    const responseData = error.response?.data;
+    return responseData?.detail || responseData?.message || responseData?.error || fallback;
+  }
+  return fallback;
+};
 
 interface AuthState {
   user: UserResponse | null;
   token: string | null;
-  role: string | null;
+  role: UserRole | null;
   organizationId: number | null;
   permissions: string[];
   isAuthenticated: boolean;
@@ -15,11 +38,11 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  token: typeof window !== 'undefined' ? localStorage.getItem('token') || null : null,
+  token: typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.token) || null : null,
   role: null,
   organizationId: null,
   permissions: [],
-  isAuthenticated: typeof window !== 'undefined' ? !!localStorage.getItem('token') : false,
+  isAuthenticated: typeof window !== 'undefined' ? !!localStorage.getItem(STORAGE_KEYS.token) : false,
   loading: false,
   error: null,
 };
@@ -34,7 +57,7 @@ export const login = createAsyncThunk(
       
       // Store token in localStorage
       if (typeof window !== 'undefined') {
-        localStorage.setItem('token', data.data.access_token);
+        localStorage.setItem(STORAGE_KEYS.token, data.data.access_token);
       }
       
       return {
@@ -43,8 +66,8 @@ export const login = createAsyncThunk(
         organizationId: data.data.organization_id || null,
         permissions: data.data.permissions,
       };
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Login failed');
+    } catch (error: unknown) {
+      return rejectWithValue(getErrorMessage(error, AUTH_ERROR_MESSAGES.loginFailed));
     }
   }
 );
@@ -55,8 +78,8 @@ export const registerAdmin = createAsyncThunk(
     try {
       const response = await api.registerAdmin(credentials);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Registration failed');
+    } catch (error: unknown) {
+      return rejectWithValue(getErrorMessage(error, AUTH_ERROR_MESSAGES.registrationFailed));
     }
   }
 );
@@ -67,8 +90,8 @@ export const registerSuperAdmin = createAsyncThunk(
     try {
       const response = await api.registerSuperAdmin(credentials);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Registration failed');
+    } catch (error: unknown) {
+      return rejectWithValue(getErrorMessage(error, AUTH_ERROR_MESSAGES.registrationFailed));
     }
   }
 );
@@ -79,8 +102,8 @@ export const registerOrganizationAdmin = createAsyncThunk(
     try {
       const response = await api.registerOrganizationAdmin(credentials);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Registration failed');
+    } catch (error: unknown) {
+      return rejectWithValue(getErrorMessage(error, AUTH_ERROR_MESSAGES.registrationFailed));
     }
   }
 );
@@ -91,15 +114,15 @@ export const getCurrentUser = createAsyncThunk(
     try {
       const response = await api.getCurrentUser();
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Failed to fetch user');
+    } catch (error: unknown) {
+      return rejectWithValue(getErrorMessage(error, AUTH_ERROR_MESSAGES.currentUserFailed));
     }
   }
 );
 
 export const logout = createAsyncThunk('auth/logout', async () => {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('token');
+    localStorage.removeItem(STORAGE_KEYS.token);
   }
   return null;
 });
@@ -119,7 +142,7 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<{ token: string; role: string; organizationId: number | null; permissions: string[] }>) => {
+      .addCase(login.fulfilled, (state, action: PayloadAction<{ token: string; role: UserRole; organizationId: number | null; permissions: string[] }>) => {
         state.loading = false;
         state.token = action.payload.token;
         state.role = action.payload.role;

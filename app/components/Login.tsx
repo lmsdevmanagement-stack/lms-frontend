@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { login, clearError } from '../redux/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import { Loader2, GraduationCap } from 'lucide-react';
+import { APP_ROUTES } from '../constants/routes';
 import Input from './Input';
 import type { RootState, AppDispatch } from '../redux/store';
 
@@ -24,7 +25,7 @@ export default function Login() {
   const { loading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   if (isAuthenticated) {
-    router.push('/dashboard');
+    router.push(APP_ROUTES.dashboard);
     return null;
   }
 
@@ -41,7 +42,7 @@ export default function Login() {
     try {
       const result = await dispatch(login(formData));
       if (login.fulfilled.match(result)) {
-        router.push('/dashboard');
+        router.push(APP_ROUTES.dashboard);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -122,8 +123,8 @@ export default function Login() {
 
           <div className="mt-6 text-center">
             <p className="text-slate-400">
-              Don't have an account?{' '}
-              <a href="/register" className="text-indigo-400 hover:text-indigo-300 font-medium transition">
+              Don&apos;t have an account?{' '}
+              <a href={APP_ROUTES.register} className="text-indigo-400 hover:text-indigo-300 font-medium transition">
                 Register your school
               </a>
             </p>
