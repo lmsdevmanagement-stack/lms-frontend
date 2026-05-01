@@ -42,6 +42,7 @@ export interface TeacherRow {
 export interface StudentRow {
   id: number;
   organizationId: number;
+  schoolId: number;
   name: string;
   email: string;
   school: string;
