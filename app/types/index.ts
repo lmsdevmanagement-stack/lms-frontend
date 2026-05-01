@@ -25,6 +25,7 @@ export type {
   DashboardSection,
   DataTableColumn,
   NavigationItem,
+  SchoolAdminRow,
   SchoolRow,
   StatCard,
   StudentRow,

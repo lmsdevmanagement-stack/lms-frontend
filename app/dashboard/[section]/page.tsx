@@ -2,7 +2,16 @@ import { notFound } from 'next/navigation';
 import DashboardView from '../../components/dashboard/DashboardView';
 import type { DashboardSection } from '../../types';
 
-const validSections: DashboardSection[] = ['schools', 'teachers', 'students', 'permissions', 'settings'];
+const validSections: DashboardSection[] = [
+  'schools',
+  'school-admins',
+  'expenses',
+  'admin-permissions',
+  'teachers',
+  'students',
+  'teacher-permissions',
+  'student-permissions',
+];
 
 interface DashboardSectionPageProps {
   params: {

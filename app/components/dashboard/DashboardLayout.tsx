@@ -113,7 +113,7 @@ export default function DashboardLayout({
               <Input
                 value={searchTerm}
                 onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="Search schools, teachers, students"
+                placeholder="Search schools, admins, teachers, students"
                 className="pl-9"
               />
             </div>
