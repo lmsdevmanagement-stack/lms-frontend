@@ -13,7 +13,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useDashboardAuth } from '../../hooks/useDashboardAuth';
 import { useDashboardCrud } from '../../hooks/useDashboardCrud';
 import { useMounted } from '../../hooks/useMounted';
-import type { DashboardSection, DataTableColumn, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
+import type { DashboardSection, DataTableColumn, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
 
 interface DashboardViewProps {
   initialSection?: DashboardSection;
@@ -30,18 +30,29 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<
     | { type: 'school'; row: SchoolRow }
+    | { type: 'school-admin'; row: SchoolAdminRow }
     | { type: 'teacher'; row: TeacherRow }
+    | { type: 'student'; row: StudentRow }
     | null
   >(null);
   const { user, role, isAuthenticated, isSuperAdmin, organizationId, schoolId, handleLogout } = useDashboardAuth();
   const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated });
-  const stats: StatCard[] = [
-    { label: 'Schools', value: String(crud.schools.length), description: isSuperAdmin ? 'All organizations' : 'Your organization' },
-    { label: 'Teachers', value: String(crud.teachers.length), description: isSuperAdmin ? 'Across all schools' : 'Your teachers' },
-    { label: 'Students', value: String(crud.students.length), description: isSuperAdmin ? 'Across all schools' : 'Your students' },
+  const stats: StatCard[] = isSuperAdmin ? [
+    { label: 'Schools', value: String(crud.schools.length), description: 'All managed schools' },
+    { label: 'School Admins', value: String(crud.schoolAdmins.length), description: 'Admins assigned to schools' },
+    { label: 'Expenses', value: '0', description: 'Expense module pending backend' },
     {
       label: 'Blocked',
-      value: String([...crud.schools, ...crud.teachers].filter((row) => row.status === 'blocked').length),
+      value: String([...crud.schools, ...crud.schoolAdmins].filter((row) => row.status === 'blocked').length),
+      description: 'Inactive records',
+    },
+  ] : [
+    { label: 'Teachers', value: String(crud.teachers.length), description: 'Your school teachers' },
+    { label: 'Students', value: String(crud.students.length), description: 'Your school students' },
+    { label: 'Teacher Permissions', value: '0', description: 'Permission module pending backend' },
+    {
+      label: 'Blocked',
+      value: String([...crud.teachers, ...crud.students].filter((row) => row.status === 'blocked').length),
       description: 'Inactive records',
     },
   ];
@@ -96,6 +107,33 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     },
   ];
 
+  const schoolAdminColumns: DataTableColumn<SchoolAdminRow>[] = [
+    {
+      key: 'name',
+      header: 'Admin',
+      cell: (row) => (
+        <div>
+          <p className="font-medium text-slate-950">{row.name}</p>
+          <p className="text-xs text-slate-500">{row.email}</p>
+        </div>
+      ),
+    },
+    { key: 'school', header: 'School', cell: (row) => row.school },
+    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (row) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => crud.openEditSchoolAdminModal(row)}>Edit</Button>
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleSchoolAdminBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
+          <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'school-admin', row })}>Delete</Button>
+        </div>
+      ),
+      className: 'text-right',
+    },
+  ];
+
   const studentColumns: DataTableColumn<StudentRow>[] = [
     {
       key: 'name',
@@ -110,7 +148,19 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     { key: 'school', header: 'School', cell: (row) => row.school },
     { key: 'className', header: 'Class', cell: (row) => row.className },
     { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    { key: 'actions', header: 'Actions', cell: () => <Button variant="ghost">View</Button>, className: 'text-right' },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (row) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost">Password</Button>
+          <Button variant="ghost" onClick={() => crud.openEditStudentModal(row)}>Edit</Button>
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleStudentBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
+          <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'student', row })}>Delete</Button>
+        </div>
+      ),
+      className: 'text-right',
+    },
   ];
 
   if (!mounted) {
@@ -134,20 +184,51 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     if (initialSection === 'schools') {
       return <DataTable title="Organizations / Schools" description="Create, edit, block, and delete schools." columns={schoolColumns} data={crud.schools} loading={crud.loading} />;
     }
+    if (initialSection === 'school-admins') {
+      return <DataTable title="School Admins" description="Create, edit, block, and delete school-scoped admins." columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />;
+    }
+    if (initialSection === 'expenses') {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Expenses</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {['School operating expenses', 'Vendor payments', 'Salary expenses', 'Expense reports', 'Approval workflow', 'Export records'].map((item) => (
+              <Button key={item} variant="outline" className="justify-start">{item}</Button>
+            ))}
+          </CardContent>
+        </Card>
+      );
+    }
+    if (initialSection === 'admin-permissions') {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin Permissions</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {['Manage school access', 'Allow staff CRUD', 'Allow student CRUD', 'Expense access', 'Communication access', 'Reports access'].map((item) => (
+              <Button key={item} variant="outline" className="justify-start">{item}</Button>
+            ))}
+          </CardContent>
+        </Card>
+      );
+    }
     if (initialSection === 'teachers') {
       return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
     }
     if (initialSection === 'students') {
-      return <DataTable title="Students" description="Students scoped to the selected school or organization." columns={studentColumns} data={crud.students} loading={crud.loading} />;
+      return <DataTable title="Students" description="Create, edit, delete, block, and reset student access." columns={studentColumns} data={crud.students} loading={crud.loading} />;
     }
-    if (initialSection === 'permissions' || initialSection === 'settings') {
+    if (initialSection === 'teacher-permissions' || initialSection === 'student-permissions') {
       return (
         <Card>
           <CardHeader>
-            <CardTitle>{initialSection === 'permissions' ? 'Permissions' : 'Settings'}</CardTitle>
+            <CardTitle>{initialSection === 'teacher-permissions' ? 'Teacher Permissions' : 'Student Permissions'}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {['Manage permissions', 'Set password policy', 'Block or unblock users', 'School data controls', 'Communication settings', 'Audit access'].map((item) => (
+            {['Dashboard access', 'Attendance access', 'Fees access', 'Reports access', 'Profile controls', 'Communication access'].map((item) => (
               <Button key={item} variant="outline" className="justify-start">{item}</Button>
             ))}
           </CardContent>
@@ -158,9 +239,17 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     return (
       <div className="space-y-6">
         <StatsGrid stats={stats} />
-        <DataTable title="Organizations / Schools" columns={schoolColumns} data={crud.schools} loading={crud.loading} />
-        <DataTable title="Teachers" columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
-        <DataTable title="Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
+        {isSuperAdmin ? (
+          <>
+            <DataTable title="Organizations / Schools" columns={schoolColumns} data={crud.schools} loading={crud.loading} />
+            <DataTable title="School Admins" columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />
+          </>
+        ) : (
+          <>
+            <DataTable title="Teachers" columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
+            <DataTable title="Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
+          </>
+        )}
       </div>
     );
   };
@@ -184,10 +273,17 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             {isSuperAdmin ? 'Super Admin Dashboard' : 'School Admin Dashboard'}
           </h1>
         </div>
-        {initialSection !== 'overview' && initialSection !== 'students' && (
-          <Button disabled={crud.loading || crud.saving} onClick={initialSection === 'schools' ? crud.openCreateSchoolModal : crud.openCreateTeacherModal}>
-            {initialSection === 'schools' ? 'Create School' : 'Create Teacher'}
-          </Button>
+        {initialSection === 'schools' && (
+          <Button disabled={crud.loading || crud.saving} onClick={crud.openCreateSchoolModal}>Create School</Button>
+        )}
+        {initialSection === 'school-admins' && (
+          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={() => crud.openCreateSchoolAdminModal()}>Create School Admin</Button>
+        )}
+        {initialSection === 'teachers' && (
+          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateTeacherModal}>Create Teacher</Button>
+        )}
+        {initialSection === 'students' && (
+          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateStudentModal}>Create Student</Button>
         )}
       </div>
 
@@ -271,11 +367,29 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
 
       <Modal
         open={crud.schoolAdminModalOpen}
-        title="Create School Admin"
+        title={crud.editingSchoolAdminId ? 'Edit School Admin' : 'Create School Admin'}
         description="Add an admin user for this school. The admin will be scoped to the selected organization."
         onClose={() => crud.setSchoolAdminModalOpen(false)}
       >
         <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            School
+            <select
+              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+              value={crud.schoolAdminForm.schoolId}
+              onChange={(event) => {
+                const selectedSchool = crud.schools.find((school) => school.id === Number(event.target.value));
+                crud.setSchoolAdminForm({
+                  ...crud.schoolAdminForm,
+                  schoolId: Number(event.target.value),
+                  organizationId: selectedSchool?.organizationId || crud.schoolAdminForm.organizationId,
+                });
+              }}
+            >
+              <option value={0}>Select school</option>
+              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+            </select>
+          </label>
           <label className="grid gap-2 text-sm font-medium text-slate-700">
             Full Name
             <Input
@@ -288,22 +402,73 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <Input
               type="email"
               value={crud.schoolAdminForm.email}
+              disabled={Boolean(crud.editingSchoolAdminId)}
               onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, email: event.target.value })}
             />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Password
-            <Input
-              type="password"
-              value={crud.schoolAdminForm.password}
-              onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, password: event.target.value })}
-              placeholder="Password123!"
-            />
-          </label>
+          {!crud.editingSchoolAdminId && (
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              Password
+              <Input
+                type="password"
+                value={crud.schoolAdminForm.password}
+                onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, password: event.target.value })}
+                placeholder="Password123!"
+              />
+            </label>
+          )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" disabled={crud.saving} onClick={() => crud.setSchoolAdminModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveSchoolAdmin} disabled={crud.saving || !crud.schoolAdminForm.fullName || !crud.schoolAdminForm.email}>
-              {crud.saving ? 'Creating...' : 'Create Admin'}
+            <Button onClick={crud.saveSchoolAdmin} disabled={crud.saving || !crud.schoolAdminForm.fullName || !crud.schoolAdminForm.email || !crud.schoolAdminForm.schoolId}>
+              {crud.saving ? 'Saving...' : crud.editingSchoolAdminId ? 'Save Changes' : 'Create Admin'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={crud.studentModalOpen}
+        title={crud.editingStudentId ? 'Edit Student' : 'Create Student'}
+        description="Manage student account and access status."
+        onClose={() => crud.setStudentModalOpen(false)}
+      >
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Full Name
+            <Input value={crud.studentForm.name} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, name: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Email
+            <Input type="email" value={crud.studentForm.email} disabled={Boolean(crud.editingStudentId)} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, email: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            School
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.studentForm.schoolId} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, schoolId: Number(event.target.value) })}>
+              <option value={0}>Select school</option>
+              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+            </select>
+          </label>
+          {!crud.editingStudentId && (
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              Password
+              <Input type="password" value={crud.studentForm.password} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, password: event.target.value })} />
+            </label>
+          )}
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Class
+            <Input value={crud.studentForm.className} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, className: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Status
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.studentForm.status} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, status: event.target.value as StudentRow['status'] })}>
+              <option value="active">Active</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setStudentModalOpen(false)}>Cancel</Button>
+            <Button onClick={crud.saveStudent} disabled={crud.saving || !crud.studentForm.name || !crud.studentForm.email || !crud.studentForm.schoolId}>
+              {crud.saving ? 'Saving...' : crud.editingStudentId ? 'Save Changes' : 'Create Student'}
             </Button>
           </div>
         </div>
@@ -311,7 +476,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
 
       <Modal
         open={deleteTarget !== null}
-        title={deleteTarget?.type === 'school' ? 'Delete School?' : 'Delete Teacher?'}
+        title="Delete Record?"
         description="This will deactivate the record and remove it from the active dashboard list."
         onClose={() => setDeleteTarget(null)}
       >
@@ -319,7 +484,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
             Are you sure you want to delete{' '}
             <span className="font-semibold">
-              {deleteTarget?.type === 'school' ? deleteTarget.row.name : deleteTarget?.row.name}
+              {deleteTarget?.row.name}
             </span>
             ?
           </div>
@@ -334,6 +499,10 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
                 if (!deleteTarget) return;
                 if (deleteTarget.type === 'school') {
                   await crud.deleteSchool(deleteTarget.row);
+                } else if (deleteTarget.type === 'school-admin') {
+                  await crud.deleteSchoolAdmin(deleteTarget.row);
+                } else if (deleteTarget.type === 'student') {
+                  await crud.deleteStudent(deleteTarget.row);
                 } else {
                   await crud.deleteTeacher(deleteTarget.row);
                 }

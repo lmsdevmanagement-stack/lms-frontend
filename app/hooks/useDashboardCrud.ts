@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { USER_ROLES } from '../constants/roles';
 import * as api from '../services/api';
-import type { SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
+import type { SchoolAdminRow, SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
 export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
@@ -13,6 +13,9 @@ export type SchoolAdminFormState = {
   password: string;
   schoolId: number;
   organizationId: number;
+};
+export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 'className' | 'status'> & {
+  password: string;
 };
 
 export const emptySchoolForm: SchoolFormState = {
@@ -36,6 +39,15 @@ export const emptySchoolAdminForm: SchoolAdminFormState = {
   password: '',
   schoolId: 0,
   organizationId: 0,
+};
+
+export const emptyStudentForm: StudentFormState = {
+  name: '',
+  email: '',
+  schoolId: 0,
+  className: '',
+  status: 'active',
+  password: '',
 };
 
 interface UseDashboardCrudArgs {
@@ -91,6 +103,23 @@ function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): Teach
     });
 }
 
+function mapSchoolAdminRows(users: UserResponse[], schools: SchoolResponse[]): SchoolAdminRow[] {
+  return users
+    .filter((user) => user.role === USER_ROLES.admin && Boolean(user.school_id))
+    .map((admin) => {
+      const school = schools.find((item) => item.id === admin.school_id);
+      return {
+        id: admin.id,
+        organizationId: admin.organization_id || 0,
+        schoolId: admin.school_id || 0,
+        name: admin.full_name,
+        email: admin.email,
+        school: school?.name || 'Unassigned',
+        status: admin.is_active ? 'active' : 'blocked',
+      };
+    });
+}
+
 function mapStudentRows(users: UserResponse[], schools: SchoolResponse[]): StudentRow[] {
   return users
     .filter((user) => user.role === USER_ROLES.student)
@@ -111,15 +140,20 @@ function mapStudentRows(users: UserResponse[], schools: SchoolResponse[]): Stude
 
 export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled }: UseDashboardCrudArgs) {
   const [schoolRows, setSchoolRows] = useState<SchoolRow[]>([]);
+  const [schoolAdminRows, setSchoolAdminRows] = useState<SchoolAdminRow[]>([]);
   const [teacherRows, setTeacherRows] = useState<TeacherRow[]>([]);
   const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
   const [schoolModalOpen, setSchoolModalOpen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
+  const [studentModalOpen, setStudentModalOpen] = useState(false);
   const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
   const [editingTeacherId, setEditingTeacherId] = useState<number | null>(null);
+  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
+  const [editingSchoolAdminId, setEditingSchoolAdminId] = useState<number | null>(null);
   const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
   const [teacherForm, setTeacherForm] = useState<TeacherFormState>(emptyTeacherForm);
+  const [studentForm, setStudentForm] = useState<StudentFormState>(emptyStudentForm);
   const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -134,11 +168,13 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       const schools = schoolsResponse.data.data;
       const users = usersResponse.data.data;
       setSchoolRows(mapSchoolRows(schools, users));
+      setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mapTeacherRows(users, schools));
       setStudentRows(mapStudentRows(users, schools));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data');
       setSchoolRows([]);
+      setSchoolAdminRows([]);
       setTeacherRows([]);
       setStudentRows([]);
     } finally {
@@ -164,6 +200,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
     return filterBySearch(scopedRows, searchTerm);
   }, [isSuperAdmin, organizationId, schoolId, teacherRows, searchTerm]);
+
+  const scopedSchoolAdmins = useMemo(() => {
+    const orgRows = isSuperAdmin ? schoolAdminRows : schoolAdminRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [isSuperAdmin, organizationId, schoolAdminRows, schoolId, searchTerm]);
 
   const scopedStudents = useMemo(() => {
     const orgRows = isSuperAdmin ? studentRows : studentRows.filter((row) => row.organizationId === organizationId);
@@ -230,11 +272,24 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
-  const openCreateSchoolAdminModal = (school: SchoolRow) => {
+  const openCreateSchoolAdminModal = (school?: SchoolRow) => {
+    setEditingSchoolAdminId(null);
     setSchoolAdminForm({
       ...emptySchoolAdminForm,
-      schoolId: school.id,
-      organizationId: school.organizationId,
+      schoolId: school?.id || scopedSchools[0]?.id || 0,
+      organizationId: school?.organizationId || scopedSchools[0]?.organizationId || organizationId,
+    });
+    setSchoolAdminModalOpen(true);
+  };
+
+  const openEditSchoolAdminModal = (admin: SchoolAdminRow) => {
+    setEditingSchoolAdminId(admin.id);
+    setSchoolAdminForm({
+      fullName: admin.name,
+      email: admin.email,
+      password: '',
+      schoolId: admin.schoolId,
+      organizationId: admin.organizationId,
     });
     setSchoolAdminModalOpen(true);
   };
@@ -242,15 +297,44 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const saveSchoolAdmin = async () => {
     setSaving(true);
     try {
-      await api.createUser({
-        email: schoolAdminForm.email,
-        full_name: schoolAdminForm.fullName,
-        password: schoolAdminForm.password || 'Password123!',
-        role: USER_ROLES.admin,
-        organization_id: schoolAdminForm.organizationId || organizationId,
-        school_id: schoolAdminForm.schoolId || null,
-      });
+      if (editingSchoolAdminId) {
+        await api.updateUser(editingSchoolAdminId, {
+          full_name: schoolAdminForm.fullName,
+          role: USER_ROLES.admin,
+          organization_id: schoolAdminForm.organizationId || organizationId,
+          school_id: schoolAdminForm.schoolId || null,
+        });
+      } else {
+        await api.createUser({
+          email: schoolAdminForm.email,
+          full_name: schoolAdminForm.fullName,
+          password: schoolAdminForm.password || 'Password123!',
+          role: USER_ROLES.admin,
+          organization_id: schoolAdminForm.organizationId || organizationId,
+          school_id: schoolAdminForm.schoolId || null,
+        });
+      }
       setSchoolAdminModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteSchoolAdmin = async (admin: SchoolAdminRow) => {
+    setSaving(true);
+    try {
+      await api.deactivateUser(admin.id);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleSchoolAdminBlock = async (admin: SchoolAdminRow) => {
+    setSaving(true);
+    try {
+      await api.updateUser(admin.id, { is_active: admin.status === 'blocked' });
       await loadDashboardData();
     } finally {
       setSaving(false);
@@ -326,8 +410,78 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const openCreateStudentModal = () => {
+    setEditingStudentId(null);
+    setStudentForm({
+      ...emptyStudentForm,
+      schoolId: scopedSchools[0]?.id || 0,
+    });
+    setStudentModalOpen(true);
+  };
+
+  const openEditStudentModal = (student: StudentRow) => {
+    setEditingStudentId(student.id);
+    setStudentForm({
+      name: student.name,
+      email: student.email,
+      schoolId: student.schoolId,
+      className: student.className,
+      status: student.status,
+      password: '',
+    });
+    setStudentModalOpen(true);
+  };
+
+  const saveStudent = async () => {
+    setSaving(true);
+    try {
+      const selectedSchool = schoolRows.find((school) => school.id === Number(studentForm.schoolId));
+      if (editingStudentId) {
+        await api.updateUser(editingStudentId, {
+          full_name: studentForm.name,
+          school_id: Number(studentForm.schoolId),
+          is_active: studentForm.status !== 'blocked',
+        });
+      } else {
+        await api.createUser({
+          email: studentForm.email,
+          full_name: studentForm.name,
+          password: studentForm.password || 'Password123!',
+          role: USER_ROLES.student,
+          organization_id: selectedSchool?.organizationId || organizationId,
+          school_id: Number(studentForm.schoolId),
+        });
+      }
+      setStudentModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteStudent = async (student: StudentRow) => {
+    setSaving(true);
+    try {
+      await api.deactivateUser(student.id);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleStudentBlock = async (student: StudentRow) => {
+    setSaving(true);
+    try {
+      await api.updateUser(student.id, { is_active: student.status === 'blocked' });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     schools: scopedSchools,
+    schoolAdmins: scopedSchoolAdmins,
     teachers: scopedTeachers,
     students: scopedStudents,
     loading,
@@ -335,17 +489,23 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     error,
     schoolModalOpen,
     teacherModalOpen,
+    studentModalOpen,
     schoolAdminModalOpen,
     editingSchoolId,
     editingTeacherId,
+    editingStudentId,
+    editingSchoolAdminId,
     schoolForm,
     teacherForm,
+    studentForm,
     schoolAdminForm,
     setSchoolForm,
     setTeacherForm,
+    setStudentForm,
     setSchoolAdminForm,
     setSchoolModalOpen,
     setTeacherModalOpen,
+    setStudentModalOpen,
     setSchoolAdminModalOpen,
     openCreateSchoolModal,
     openEditSchoolModal,
@@ -353,11 +513,19 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     deleteSchool,
     toggleSchoolBlock,
     openCreateSchoolAdminModal,
+    openEditSchoolAdminModal,
     saveSchoolAdmin,
+    deleteSchoolAdmin,
+    toggleSchoolAdminBlock,
     openCreateTeacherModal,
     openEditTeacherModal,
     saveTeacher,
     deleteTeacher,
     toggleTeacherBlock,
+    openCreateStudentModal,
+    openEditStudentModal,
+    saveStudent,
+    deleteStudent,
+    toggleStudentBlock,
   };
 }

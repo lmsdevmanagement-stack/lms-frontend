@@ -9,7 +9,16 @@ export interface NavigationItem {
   roles: UserRole[];
 }
 
-export type DashboardSection = 'overview' | 'schools' | 'teachers' | 'students' | 'permissions' | 'settings';
+export type DashboardSection =
+  | 'overview'
+  | 'schools'
+  | 'school-admins'
+  | 'expenses'
+  | 'admin-permissions'
+  | 'teachers'
+  | 'students'
+  | 'teacher-permissions'
+  | 'student-permissions';
 
 export interface StatCard {
   label: string;
@@ -36,6 +45,16 @@ export interface TeacherRow {
   email: string;
   school: string;
   subject: string;
+  status: 'active' | 'blocked';
+}
+
+export interface SchoolAdminRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  name: string;
+  email: string;
+  school: string;
   status: 'active' | 'blocked';
 }
 
