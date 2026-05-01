@@ -1,4 +1,5 @@
 export type { ApiResponse } from './api';
+export type { ActivityResponse } from './activities';
 export type {
   LoginCredentials,
   RegisterAdminData,

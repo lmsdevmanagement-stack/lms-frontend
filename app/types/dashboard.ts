@@ -13,6 +13,7 @@ export type DashboardSection =
   | 'overview'
   | 'schools'
   | 'school-admins'
+  | 'activities'
   | 'expenses'
   | 'admin-permissions'
   | 'teachers'

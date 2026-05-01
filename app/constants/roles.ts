@@ -12,7 +12,7 @@ export const USER_ROLES = {
 export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 
 export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  [USER_ROLES.superAdmin]: ['dashboard', 'schools', 'school-admins', 'expenses', 'admin-permissions'],
+  [USER_ROLES.superAdmin]: ['dashboard', 'schools', 'school-admins', 'activities', 'expenses', 'admin-permissions'],
   [USER_ROLES.admin]: ['dashboard', 'teachers', 'students', 'teacher-permissions', 'student-permissions'],
   [USER_ROLES.teacher]: ['dashboard', 'students', 'attendance', 'reports'],
   [USER_ROLES.accountant]: ['dashboard', 'fees', 'billing', 'reports'],
