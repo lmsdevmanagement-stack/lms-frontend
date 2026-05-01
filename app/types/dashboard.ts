@@ -21,6 +21,7 @@ export interface SchoolRow {
   id: number;
   organizationId: number;
   name: string;
+  address: string;
   admin: string;
   teachers: number;
   students: number;
@@ -30,6 +31,7 @@ export interface SchoolRow {
 export interface TeacherRow {
   id: number;
   organizationId: number;
+  schoolId: number;
   name: string;
   email: string;
   school: string;

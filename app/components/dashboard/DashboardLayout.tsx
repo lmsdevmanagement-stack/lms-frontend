@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Menu, Search, X } from 'lucide-react';
+import { LogOut, PanelLeftOpen, Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { DASHBOARD_NAV_ITEMS } from '../../constants/dashboard';
@@ -48,9 +48,14 @@ export default function DashboardLayout({
               <h1 className="text-base font-semibold">LMS Dashboard</h1>
               <p className="text-xs capitalize text-slate-500">{effectiveRole?.replace('_', ' ') || 'admin'}</p>
             </div>
-            <Button variant="ghost" className="h-9 w-9 px-0 lg:hidden" onClick={() => setOpen(false)} aria-label="Close sidebar">
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 lg:hidden"
+              onClick={() => setOpen(false)}
+              aria-label="Close sidebar"
+            >
               <X className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
 
           <nav className="flex-1 space-y-1 px-3 py-4">
@@ -95,9 +100,14 @@ export default function DashboardLayout({
       <div className="lg:pl-72">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
-            <Button variant="ghost" className="h-9 w-9 px-0 lg:hidden" onClick={() => setOpen(true)} aria-label="Open sidebar">
-              <Menu className="h-5 w-5" />
-            </Button>
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 lg:hidden"
+              onClick={() => setOpen(true)}
+              aria-label="Open sidebar"
+            >
+              <PanelLeftOpen className="h-5 w-5" />
+            </button>
             <div className="relative max-w-xl flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
