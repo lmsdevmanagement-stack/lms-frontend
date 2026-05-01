@@ -5,6 +5,7 @@ import type { DashboardSection } from '../../types';
 const validSections: DashboardSection[] = [
   'schools',
   'school-admins',
+  'activities',
   'expenses',
   'admin-permissions',
   'teachers',
