@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Skeleton } from '../ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import type { DataTableColumn } from '../../types';
 
@@ -8,9 +9,10 @@ interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   data: T[];
   emptyMessage?: string;
+  loading?: boolean;
 }
 
-export default function DataTable<T>({ title, description, columns, data, emptyMessage = 'No records found.' }: DataTableProps<T>) {
+export default function DataTable<T>({ title, description, columns, data, emptyMessage = 'No records found.', loading = false }: DataTableProps<T>) {
   return (
     <Card>
       <CardHeader>
@@ -30,7 +32,17 @@ export default function DataTable<T>({ title, description, columns, data, emptyM
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.length > 0 ? (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, rowIndex) => (
+                  <TableRow key={rowIndex}>
+                    {columns.map((column) => (
+                      <TableCell key={column.key}>
+                        <Skeleton className="h-5 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : data.length > 0 ? (
                 data.map((row, rowIndex) => (
                   <TableRow key={rowIndex}>
                     {columns.map((column) => (

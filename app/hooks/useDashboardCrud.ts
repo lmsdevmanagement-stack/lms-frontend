@@ -1,0 +1,282 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { USER_ROLES } from '../constants/roles';
+import * as api from '../services/api';
+import type { SchoolResponse, SchoolRow, TeacherRow, UserResponse } from '../types';
+
+export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
+export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
+  password: string;
+};
+
+export const emptySchoolForm: SchoolFormState = {
+  name: '',
+  address: '',
+  status: 'active',
+};
+
+export const emptyTeacherForm: TeacherFormState = {
+  name: '',
+  email: '',
+  schoolId: 0,
+  subject: '',
+  status: 'active',
+  password: '',
+};
+
+interface UseDashboardCrudArgs {
+  isSuperAdmin: boolean;
+  organizationId: number;
+  searchTerm: string;
+  enabled: boolean;
+}
+
+function filterBySearch<T extends object>(rows: T[], searchTerm: string) {
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  if (!normalizedSearch) return rows;
+  return rows.filter((row) =>
+    Object.values(row).some((value) => String(value).toLowerCase().includes(normalizedSearch))
+  );
+}
+
+function mapSchoolRows(schools: SchoolResponse[], users: UserResponse[]): SchoolRow[] {
+  return schools.map((school) => {
+    const schoolUsers = users.filter((user) => user.school_id === school.id);
+    const orgUsers = users.filter((user) => user.organization_id === school.organization_id);
+    const admin = orgUsers.find((user) => user.role === USER_ROLES.admin);
+    return {
+      id: school.id,
+      organizationId: school.organization_id || 0,
+      name: school.name,
+      address: school.address || '',
+      admin: admin?.full_name || 'Unassigned',
+      teachers: schoolUsers.filter((user) => user.role === USER_ROLES.teacher).length,
+      students: schoolUsers.filter((user) => user.role === USER_ROLES.student).length,
+      status: school.is_active ? 'active' : 'blocked',
+    };
+  });
+}
+
+function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): TeacherRow[] {
+  return users
+    .filter((user) => user.role === USER_ROLES.teacher)
+    .map((teacher) => {
+      const school = schools.find((item) => item.id === teacher.school_id);
+      return {
+        id: teacher.id,
+        organizationId: teacher.organization_id || 0,
+        schoolId: teacher.school_id || 0,
+        name: teacher.full_name,
+        email: teacher.email,
+        school: school?.name || 'Unassigned',
+        subject: 'General',
+        status: teacher.is_active ? 'active' : 'blocked',
+      };
+    });
+}
+
+export function useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, enabled }: UseDashboardCrudArgs) {
+  const [schoolRows, setSchoolRows] = useState<SchoolRow[]>([]);
+  const [teacherRows, setTeacherRows] = useState<TeacherRow[]>([]);
+  const [schoolModalOpen, setSchoolModalOpen] = useState(false);
+  const [teacherModalOpen, setTeacherModalOpen] = useState(false);
+  const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
+  const [editingTeacherId, setEditingTeacherId] = useState<number | null>(null);
+  const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
+  const [teacherForm, setTeacherForm] = useState<TeacherFormState>(emptyTeacherForm);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDashboardData = useCallback(async () => {
+    if (!enabled) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const [schoolsResponse, usersResponse] = await Promise.all([api.listSchools(), api.listUsers()]);
+      const schools = schoolsResponse.data.data;
+      const users = usersResponse.data.data;
+      setSchoolRows(mapSchoolRows(schools, users));
+      setTeacherRows(mapTeacherRows(users, schools));
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data');
+      setSchoolRows([]);
+      setTeacherRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [enabled]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadDashboardData();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadDashboardData]);
+
+  const scopedSchools = useMemo(() => {
+    const scopedRows = isSuperAdmin ? schoolRows : schoolRows.filter((row) => row.organizationId === organizationId);
+    return filterBySearch(scopedRows, searchTerm);
+  }, [isSuperAdmin, organizationId, schoolRows, searchTerm]);
+
+  const scopedTeachers = useMemo(() => {
+    const scopedRows = isSuperAdmin ? teacherRows : teacherRows.filter((row) => row.organizationId === organizationId);
+    return filterBySearch(scopedRows, searchTerm);
+  }, [isSuperAdmin, organizationId, teacherRows, searchTerm]);
+
+  const openCreateSchoolModal = () => {
+    setEditingSchoolId(null);
+    setSchoolForm(emptySchoolForm);
+    setSchoolModalOpen(true);
+  };
+
+  const openEditSchoolModal = (school: SchoolRow) => {
+    setEditingSchoolId(school.id);
+    setSchoolForm({
+      name: school.name,
+      address: school.address,
+      status: school.status,
+    });
+    setSchoolModalOpen(true);
+  };
+
+  const saveSchool = async () => {
+    setSaving(true);
+    try {
+      if (editingSchoolId) {
+        await api.updateSchool(editingSchoolId, {
+          name: schoolForm.name,
+          address: schoolForm.address,
+          is_active: schoolForm.status !== 'blocked',
+        });
+      } else {
+        await api.createSchool({
+          name: schoolForm.name,
+          address: schoolForm.address,
+          organization_id: isSuperAdmin ? organizationId : undefined,
+        });
+      }
+      setSchoolModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteSchool = async (school: SchoolRow) => {
+    setSaving(true);
+    try {
+      await api.deactivateSchool(school.id);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleSchoolBlock = async (school: SchoolRow) => {
+    setSaving(true);
+    try {
+      await api.updateSchool(school.id, { is_active: school.status === 'blocked' });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateTeacherModal = () => {
+    setEditingTeacherId(null);
+    setTeacherForm({
+      ...emptyTeacherForm,
+      schoolId: scopedSchools[0]?.id || 0,
+    });
+    setTeacherModalOpen(true);
+  };
+
+  const openEditTeacherModal = (teacher: TeacherRow) => {
+    setEditingTeacherId(teacher.id);
+    setTeacherForm({
+      name: teacher.name,
+      email: teacher.email,
+      schoolId: teacher.schoolId,
+      subject: teacher.subject,
+      status: teacher.status,
+      password: '',
+    });
+    setTeacherModalOpen(true);
+  };
+
+  const saveTeacher = async () => {
+    setSaving(true);
+    try {
+      const selectedSchool = schoolRows.find((school) => school.id === Number(teacherForm.schoolId));
+      if (editingTeacherId) {
+        await api.updateUser(editingTeacherId, {
+          full_name: teacherForm.name,
+          school_id: Number(teacherForm.schoolId),
+          is_active: teacherForm.status !== 'blocked',
+        });
+      } else {
+        await api.createUser({
+          email: teacherForm.email,
+          full_name: teacherForm.name,
+          password: teacherForm.password || 'Password123!',
+          role: USER_ROLES.teacher,
+          organization_id: selectedSchool?.organizationId || organizationId,
+          school_id: Number(teacherForm.schoolId),
+        });
+      }
+      setTeacherModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteTeacher = async (teacher: TeacherRow) => {
+    setSaving(true);
+    try {
+      await api.deactivateUser(teacher.id);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleTeacherBlock = async (teacher: TeacherRow) => {
+    setSaving(true);
+    try {
+      await api.updateUser(teacher.id, { is_active: teacher.status === 'blocked' });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return {
+    schools: scopedSchools,
+    teachers: scopedTeachers,
+    students: [],
+    loading,
+    saving,
+    error,
+    schoolModalOpen,
+    teacherModalOpen,
+    editingSchoolId,
+    editingTeacherId,
+    schoolForm,
+    teacherForm,
+    setSchoolForm,
+    setTeacherForm,
+    setSchoolModalOpen,
+    setTeacherModalOpen,
+    openCreateSchoolModal,
+    openEditSchoolModal,
+    saveSchool,
+    deleteSchool,
+    toggleSchoolBlock,
+    openCreateTeacherModal,
+    openEditTeacherModal,
+    saveTeacher,
+    deleteTeacher,
+    toggleTeacherBlock,
+  };
+}
