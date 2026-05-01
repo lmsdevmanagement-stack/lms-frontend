@@ -4,6 +4,7 @@ import { STORAGE_KEYS } from '../constants/auth';
 import { APP_ROUTES } from '../constants/routes';
 import type {
   ApiResponse,
+  ActivityResponse,
   LoginCredentials,
   OrganizationCreateData,
   OrganizationResponse,
@@ -93,6 +94,11 @@ export const logout = (): Promise<void> => {
     localStorage.removeItem(STORAGE_KEYS.token);
   }
   return Promise.resolve();
+};
+
+// Activities API
+export const listActivities = (limit = 50): Promise<AxiosResponse<ApiResponse<ActivityResponse[]>>> => {
+  return api.get(API_ENDPOINTS.activities.base, { params: { limit } });
 };
 
 // Organizations API

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { USER_ROLES } from '../constants/roles';
 import * as api from '../services/api';
-import type { SchoolAdminRow, SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
+import type { ActivityResponse, SchoolAdminRow, SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
 export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
@@ -143,6 +143,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [schoolAdminRows, setSchoolAdminRows] = useState<SchoolAdminRow[]>([]);
   const [teacherRows, setTeacherRows] = useState<TeacherRow[]>([]);
   const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
+  const [activityRows, setActivityRows] = useState<ActivityResponse[]>([]);
   const [schoolModalOpen, setSchoolModalOpen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
   const [studentModalOpen, setStudentModalOpen] = useState(false);
@@ -164,19 +165,25 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const [schoolsResponse, usersResponse] = await Promise.all([api.listSchools(), api.listUsers()]);
+      const [schoolsResponse, usersResponse, activitiesResponse] = await Promise.all([
+        api.listSchools(),
+        api.listUsers(),
+        api.listActivities(50),
+      ]);
       const schools = schoolsResponse.data.data;
       const users = usersResponse.data.data;
       setSchoolRows(mapSchoolRows(schools, users));
       setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mapTeacherRows(users, schools));
       setStudentRows(mapStudentRows(users, schools));
+      setActivityRows(activitiesResponse.data.data);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data');
       setSchoolRows([]);
       setSchoolAdminRows([]);
       setTeacherRows([]);
       setStudentRows([]);
+      setActivityRows([]);
     } finally {
       setLoading(false);
     }
@@ -212,6 +219,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
     return filterBySearch(scopedRows, searchTerm);
   }, [isSuperAdmin, organizationId, schoolId, studentRows, searchTerm]);
+
+  const scopedActivities = useMemo(() => {
+    const orgRows = isSuperAdmin ? activityRows : activityRows.filter((row) => row.organization_id === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.school_id === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [activityRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
 
   const openCreateSchoolModal = () => {
     setEditingSchoolId(null);
@@ -484,6 +497,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     schoolAdmins: scopedSchoolAdmins,
     teachers: scopedTeachers,
     students: scopedStudents,
+    activities: scopedActivities,
     loading,
     saving,
     error,

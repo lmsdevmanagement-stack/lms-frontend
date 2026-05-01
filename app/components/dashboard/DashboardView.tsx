@@ -14,7 +14,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useDashboardAuth } from '../../hooks/useDashboardAuth';
 import { useDashboardCrud } from '../../hooks/useDashboardCrud';
 import { useMounted } from '../../hooks/useMounted';
-import type { DashboardSection, DataTableColumn, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
+import type { ActivityResponse, DashboardSection, DataTableColumn, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
 
 interface DashboardViewProps {
   initialSection?: DashboardSection;
@@ -164,6 +164,27 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     },
   ];
 
+  const activityColumns: DataTableColumn<ActivityResponse>[] = [
+    {
+      key: 'description',
+      header: 'Activity',
+      cell: (row) => (
+        <div>
+          <p className="font-medium text-slate-950">{row.description}</p>
+          <p className="text-xs text-slate-500">{row.actor_name} · {row.actor_role.replace('_', ' ')}</p>
+        </div>
+      ),
+    },
+    { key: 'action', header: 'Action', cell: (row) => <Badge variant="secondary">{row.action}</Badge> },
+    { key: 'entity_type', header: 'Entity', cell: (row) => row.entity_type },
+    {
+      key: 'created_at',
+      header: 'Time',
+      cell: (row) => new Date(row.created_at).toLocaleString(),
+      className: 'whitespace-nowrap',
+    },
+  ];
+
   if (!mounted) {
     return (
       <div className="min-h-screen bg-slate-100 p-6">
@@ -187,6 +208,9 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     }
     if (initialSection === 'school-admins') {
       return <DataTable title="School Admins" description="Create, edit, block, and delete school-scoped admins." columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />;
+    }
+    if (initialSection === 'activities') {
+      return <DataTable title="User Activities" description="Track login, school, admin, teacher, and student changes across the platform." columns={activityColumns} data={crud.activities} loading={crud.loading} />;
     }
     if (initialSection === 'expenses') {
       return (
@@ -222,6 +246,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           <>
             <DataTable title="Organizations / Schools" columns={schoolColumns} data={crud.schools} loading={crud.loading} />
             <DataTable title="School Admins" columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />
+            <DataTable title="Recent User Activities" columns={activityColumns} data={crud.activities.slice(0, 8)} loading={crud.loading} />
           </>
         ) : (
           <>

@@ -8,6 +8,9 @@ export const API_ENDPOINTS = {
     registerOrganizationAdmin: '/auth/register/organization-admin',
     registerSuperAdmin: '/auth/register/super-admin',
   },
+  activities: {
+    base: '/activities',
+  },
   organizations: {
     base: '/organizations',
     byId: (organizationId: number) => `/organizations/${organizationId}`,
