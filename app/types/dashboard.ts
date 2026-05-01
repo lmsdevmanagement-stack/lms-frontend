@@ -56,6 +56,7 @@ export interface SchoolAdminRow {
   name: string;
   email: string;
   school: string;
+  permissions: string[];
   status: 'active' | 'blocked';
 }
 

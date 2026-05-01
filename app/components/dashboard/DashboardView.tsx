@@ -36,6 +36,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     | { type: 'student'; row: StudentRow }
     | null
   >(null);
+  const [permissionTarget, setPermissionTarget] = useState<SchoolAdminRow | null>(null);
   const { user, role, isAuthenticated, isSuperAdmin, organizationId, schoolId, handleLogout } = useDashboardAuth();
   const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated });
   const stats: StatCard[] = isSuperAdmin ? [
@@ -126,6 +127,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setPermissionTarget(row)}>Permissions</Button>
           <Button variant="ghost" onClick={() => crud.openEditSchoolAdminModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleSchoolAdminBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
           <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'school-admin', row })}>Delete</Button>
@@ -476,6 +478,27 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             </Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={permissionTarget !== null}
+        title="Manage Admin Permissions"
+        description={permissionTarget ? `Set individual access for ${permissionTarget.name}.` : 'Set individual admin access.'}
+        onClose={() => setPermissionTarget(null)}
+      >
+        {permissionTarget && (
+          <PermissionsMatrix
+            section="admin-permissions"
+            title={permissionTarget.name}
+            description={`${permissionTarget.school} · ${permissionTarget.email}`}
+            value={permissionTarget.permissions}
+            saving={crud.saving}
+            onSave={async (permissions) => {
+              await crud.saveSchoolAdminPermissions(permissionTarget, permissions);
+              setPermissionTarget(null);
+            }}
+          />
+        )}
       </Modal>
 
       <Modal

@@ -115,6 +115,7 @@ function mapSchoolAdminRows(users: UserResponse[], schools: SchoolResponse[]): S
         name: admin.full_name,
         email: admin.email,
         school: school?.name || 'Unassigned',
+        permissions: admin.permissions || [],
         status: admin.is_active ? 'active' : 'blocked',
       };
     });
@@ -354,6 +355,16 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const saveSchoolAdminPermissions = async (admin: SchoolAdminRow, permissions: string[]) => {
+    setSaving(true);
+    try {
+      await api.updateUser(admin.id, { permissions });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openCreateTeacherModal = () => {
     setEditingTeacherId(null);
     setTeacherForm({
@@ -531,6 +542,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     saveSchoolAdmin,
     deleteSchoolAdmin,
     toggleSchoolAdminBlock,
+    saveSchoolAdminPermissions,
     openCreateTeacherModal,
     openEditTeacherModal,
     saveTeacher,
