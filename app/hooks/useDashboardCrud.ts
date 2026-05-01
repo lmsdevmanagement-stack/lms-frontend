@@ -7,6 +7,13 @@ export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
 export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
   password: string;
 };
+export type SchoolAdminFormState = {
+  fullName: string;
+  email: string;
+  password: string;
+  schoolId: number;
+  organizationId: number;
+};
 
 export const emptySchoolForm: SchoolFormState = {
   name: '',
@@ -21,6 +28,14 @@ export const emptyTeacherForm: TeacherFormState = {
   subject: '',
   status: 'active',
   password: '',
+};
+
+export const emptySchoolAdminForm: SchoolAdminFormState = {
+  fullName: '',
+  email: '',
+  password: '',
+  schoolId: 0,
+  organizationId: 0,
 };
 
 interface UseDashboardCrudArgs {
@@ -79,10 +94,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, ena
   const [teacherRows, setTeacherRows] = useState<TeacherRow[]>([]);
   const [schoolModalOpen, setSchoolModalOpen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
+  const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
   const [editingTeacherId, setEditingTeacherId] = useState<number | null>(null);
   const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
   const [teacherForm, setTeacherForm] = useState<TeacherFormState>(emptyTeacherForm);
+  const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -182,6 +199,33 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, ena
     }
   };
 
+  const openCreateSchoolAdminModal = (school: SchoolRow) => {
+    setSchoolAdminForm({
+      ...emptySchoolAdminForm,
+      schoolId: school.id,
+      organizationId: school.organizationId,
+    });
+    setSchoolAdminModalOpen(true);
+  };
+
+  const saveSchoolAdmin = async () => {
+    setSaving(true);
+    try {
+      await api.createUser({
+        email: schoolAdminForm.email,
+        full_name: schoolAdminForm.fullName,
+        password: schoolAdminForm.password || 'Password123!',
+        role: USER_ROLES.admin,
+        organization_id: schoolAdminForm.organizationId || organizationId,
+        school_id: schoolAdminForm.schoolId || null,
+      });
+      setSchoolAdminModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openCreateTeacherModal = () => {
     setEditingTeacherId(null);
     setTeacherForm({
@@ -260,19 +304,25 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, searchTerm, ena
     error,
     schoolModalOpen,
     teacherModalOpen,
+    schoolAdminModalOpen,
     editingSchoolId,
     editingTeacherId,
     schoolForm,
     teacherForm,
+    schoolAdminForm,
     setSchoolForm,
     setTeacherForm,
+    setSchoolAdminForm,
     setSchoolModalOpen,
     setTeacherModalOpen,
+    setSchoolAdminModalOpen,
     openCreateSchoolModal,
     openEditSchoolModal,
     saveSchool,
     deleteSchool,
     toggleSchoolBlock,
+    openCreateSchoolAdminModal,
+    saveSchoolAdmin,
     openCreateTeacherModal,
     openEditTeacherModal,
     saveTeacher,
