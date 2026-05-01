@@ -33,7 +33,11 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
-  const navItems = useMemo(() => (role ? DASHBOARD_NAV_ITEMS.filter((item) => item.roles.includes(role)) : []), [role]);
+  const effectiveRole = role || user?.role || null;
+  const navItems = useMemo(
+    () => (effectiveRole ? DASHBOARD_NAV_ITEMS.filter((item) => item.roles.includes(effectiveRole)) : []),
+    [effectiveRole]
+  );
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-950">
@@ -42,7 +46,7 @@ export default function DashboardLayout({
           <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5">
             <div>
               <h1 className="text-base font-semibold">LMS Dashboard</h1>
-              <p className="text-xs capitalize text-slate-500">{role?.replace('_', ' ') || 'admin'}</p>
+              <p className="text-xs capitalize text-slate-500">{effectiveRole?.replace('_', ' ') || 'admin'}</p>
             </div>
             <Button variant="ghost" className="h-9 w-9 px-0 lg:hidden" onClick={() => setOpen(false)} aria-label="Close sidebar">
               <X className="h-4 w-4" />
