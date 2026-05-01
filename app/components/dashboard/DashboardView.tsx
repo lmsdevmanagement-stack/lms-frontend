@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import DashboardLayout from './DashboardLayout';
 import DataTable from './DataTable';
+import PermissionsMatrix from './PermissionsMatrix';
 import StatsGrid from './StatsGrid';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -202,18 +203,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       );
     }
     if (initialSection === 'admin-permissions') {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Admin Permissions</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {['Manage school access', 'Allow staff CRUD', 'Allow student CRUD', 'Expense access', 'Communication access', 'Reports access'].map((item) => (
-              <Button key={item} variant="outline" className="justify-start">{item}</Button>
-            ))}
-          </CardContent>
-        </Card>
-      );
+      return <PermissionsMatrix section="admin-permissions" />;
     }
     if (initialSection === 'teachers') {
       return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
@@ -222,18 +212,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       return <DataTable title="Students" description="Create, edit, delete, block, and reset student access." columns={studentColumns} data={crud.students} loading={crud.loading} />;
     }
     if (initialSection === 'teacher-permissions' || initialSection === 'student-permissions') {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle>{initialSection === 'teacher-permissions' ? 'Teacher Permissions' : 'Student Permissions'}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {['Dashboard access', 'Attendance access', 'Fees access', 'Reports access', 'Profile controls', 'Communication access'].map((item) => (
-              <Button key={item} variant="outline" className="justify-start">{item}</Button>
-            ))}
-          </CardContent>
-        </Card>
-      );
+      return <PermissionsMatrix section={initialSection} />;
     }
 
     return (
