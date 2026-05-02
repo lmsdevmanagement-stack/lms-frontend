@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { USER_ROLES } from '../constants/roles';
 import * as api from '../services/api';
-import type { ActivityResponse, SchoolAdminRow, SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
+import type { ActivityResponse, ClassResponse, ClassRow, SchoolAdminRow, SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
+export type ClassFormState = Pick<ClassRow, 'name' | 'section' | 'description' | 'schoolId' | 'status'>;
 export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
   password: string;
 };
@@ -14,7 +15,7 @@ export type SchoolAdminFormState = {
   schoolId: number;
   organizationId: number;
 };
-export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 'className' | 'status'> & {
+export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 'classId' | 'status'> & {
   password: string;
 };
 
@@ -33,6 +34,14 @@ export const emptyTeacherForm: TeacherFormState = {
   password: '',
 };
 
+export const emptyClassForm: ClassFormState = {
+  name: '',
+  section: '',
+  description: '',
+  schoolId: 0,
+  status: 'active',
+};
+
 export const emptySchoolAdminForm: SchoolAdminFormState = {
   fullName: '',
   email: '',
@@ -45,7 +54,7 @@ export const emptyStudentForm: StudentFormState = {
   name: '',
   email: '',
   schoolId: 0,
-  className: '',
+  classId: 0,
   status: 'active',
   password: '',
 };
