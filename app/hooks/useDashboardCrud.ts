@@ -565,10 +565,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   };
 
   const openCreateStudentModal = () => {
+    const defaultSchoolId = scopedSchools[0]?.id || 0;
     setEditingStudentId(null);
     setStudentForm({
       ...emptyStudentForm,
-      schoolId: scopedSchools[0]?.id || 0,
+      schoolId: defaultSchoolId,
+      classId: scopedClasses.find((schoolClass) => schoolClass.schoolId === defaultSchoolId)?.id || 0,
     });
     setStudentModalOpen(true);
   };
@@ -579,7 +581,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       name: student.name,
       email: student.email,
       schoolId: student.schoolId,
-      className: student.className,
+      classId: student.classId,
       status: student.status,
       password: '',
     });
@@ -594,6 +596,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
         await api.updateUser(editingStudentId, {
           full_name: studentForm.name,
           school_id: Number(studentForm.schoolId),
+          class_id: Number(studentForm.classId) || null,
           is_active: studentForm.status !== 'blocked',
         });
       } else {
@@ -604,6 +607,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           role: USER_ROLES.student,
           organization_id: selectedSchool?.organizationId || organizationId,
           school_id: Number(studentForm.schoolId),
+          class_id: Number(studentForm.classId) || null,
         });
       }
       setStudentModalOpen(false);
