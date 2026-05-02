@@ -48,7 +48,6 @@ export interface TeacherRow {
   id: number;
   organizationId: number;
   schoolId: number;
-  teacherId: number;
   name: string;
   email: string;
   school: string;
@@ -61,6 +60,7 @@ export interface ClassRow {
   id: number;
   organizationId: number;
   schoolId: number;
+  teacherId: number;
   name: string;
   section: string;
   description: string;
