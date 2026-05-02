@@ -176,19 +176,23 @@ function mapStudentRows(users: UserResponse[], schools: SchoolResponse[], classe
 
 export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled }: UseDashboardCrudArgs) {
   const [schoolRows, setSchoolRows] = useState<SchoolRow[]>([]);
+  const [classRows, setClassRows] = useState<ClassRow[]>([]);
   const [schoolAdminRows, setSchoolAdminRows] = useState<SchoolAdminRow[]>([]);
   const [teacherRows, setTeacherRows] = useState<TeacherRow[]>([]);
   const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
   const [activityRows, setActivityRows] = useState<ActivityResponse[]>([]);
   const [schoolModalOpen, setSchoolModalOpen] = useState(false);
+  const [classModalOpen, setClassModalOpen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
   const [studentModalOpen, setStudentModalOpen] = useState(false);
   const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
+  const [editingClassId, setEditingClassId] = useState<number | null>(null);
   const [editingTeacherId, setEditingTeacherId] = useState<number | null>(null);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
   const [editingSchoolAdminId, setEditingSchoolAdminId] = useState<number | null>(null);
   const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
+  const [classForm, setClassForm] = useState<ClassFormState>(emptyClassForm);
   const [teacherForm, setTeacherForm] = useState<TeacherFormState>(emptyTeacherForm);
   const [studentForm, setStudentForm] = useState<StudentFormState>(emptyStudentForm);
   const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
@@ -201,21 +205,26 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const [schoolsResponse, usersResponse, activitiesResponse] = await Promise.all([
+      const [schoolsResponse, classesResponse, usersResponse, activitiesResponse] = await Promise.all([
         api.listSchools(),
+        api.listClasses(),
         api.listUsers(),
         api.listActivities(50),
       ]);
       const schools = schoolsResponse.data.data;
+      const classes = classesResponse.data.data;
       const users = usersResponse.data.data;
+      const mappedClasses = mapClassRows(classes, schools, users);
       setSchoolRows(mapSchoolRows(schools, users));
+      setClassRows(mappedClasses);
       setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mapTeacherRows(users, schools));
-      setStudentRows(mapStudentRows(users, schools));
+      setStudentRows(mapStudentRows(users, schools, mappedClasses));
       setActivityRows(activitiesResponse.data.data);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data');
       setSchoolRows([]);
+      setClassRows([]);
       setSchoolAdminRows([]);
       setTeacherRows([]);
       setStudentRows([]);
