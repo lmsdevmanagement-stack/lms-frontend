@@ -94,6 +94,28 @@ function mapSchoolRows(schools: SchoolResponse[], users: UserResponse[]): School
   });
 }
 
+function formatClassName(schoolClass?: Pick<ClassRow, 'name' | 'section'>) {
+  if (!schoolClass) return 'Unassigned';
+  return schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name;
+}
+
+function mapClassRows(classes: ClassResponse[], schools: SchoolResponse[], users: UserResponse[]): ClassRow[] {
+  return classes.map((schoolClass) => {
+    const school = schools.find((item) => item.id === schoolClass.school_id);
+    return {
+      id: schoolClass.id,
+      organizationId: schoolClass.organization_id,
+      schoolId: schoolClass.school_id,
+      name: schoolClass.name,
+      section: schoolClass.section || '',
+      description: schoolClass.description || '',
+      school: school?.name || 'Unassigned',
+      students: users.filter((user) => user.role === USER_ROLES.student && user.class_id === schoolClass.id).length,
+      status: schoolClass.is_active ? 'active' : 'blocked',
+    };
+  });
+}
+
 function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): TeacherRow[] {
   return users
     .filter((user) => user.role === USER_ROLES.teacher)
@@ -131,19 +153,21 @@ function mapSchoolAdminRows(users: UserResponse[], schools: SchoolResponse[]): S
     });
 }
 
-function mapStudentRows(users: UserResponse[], schools: SchoolResponse[]): StudentRow[] {
+function mapStudentRows(users: UserResponse[], schools: SchoolResponse[], classes: ClassRow[]): StudentRow[] {
   return users
     .filter((user) => user.role === USER_ROLES.student)
     .map((student) => {
       const school = schools.find((item) => item.id === student.school_id);
+      const schoolClass = classes.find((item) => item.id === student.class_id);
       return {
         id: student.id,
         organizationId: student.organization_id || 0,
         schoolId: student.school_id || 0,
+        classId: student.class_id || 0,
         name: student.full_name,
         email: student.email,
         school: school?.name || 'Unassigned',
-        className: 'Unassigned',
+        className: formatClassName(schoolClass),
         permissions: student.permissions || [],
         status: student.is_active ? 'active' : 'blocked',
       };
