@@ -5,9 +5,16 @@ import { APP_ROUTES } from '../constants/routes';
 import type {
   ApiResponse,
   ActivityResponse,
+  AttendanceCreateData,
+  AttendanceResponse,
+  AttendanceUpdateData,
   ClassCreateData,
   ClassResponse,
   ClassUpdateData,
+  DashboardReport,
+  FeeCreateData,
+  FeeResponse,
+  FeeUpdateData,
   LoginCredentials,
   OrganizationCreateData,
   OrganizationResponse,
@@ -181,6 +188,49 @@ export const updateClass = (
 
 export const deactivateClass = (classId: number): Promise<AxiosResponse<ApiResponse<ClassResponse>>> => {
   return api.delete(API_ENDPOINTS.classes.byId(classId));
+};
+
+// Attendance API
+export const listAttendance = (params?: {
+  attendance_date?: string;
+  class_id?: number;
+  school_id?: number;
+}): Promise<AxiosResponse<ApiResponse<AttendanceResponse[]>>> => {
+  return api.get(API_ENDPOINTS.attendance.base, { params });
+};
+
+export const createAttendance = (data: AttendanceCreateData): Promise<AxiosResponse<ApiResponse<AttendanceResponse>>> => {
+  return api.post(API_ENDPOINTS.attendance.base, data);
+};
+
+export const updateAttendance = (
+  attendanceId: number,
+  data: AttendanceUpdateData
+): Promise<AxiosResponse<ApiResponse<AttendanceResponse>>> => {
+  return api.patch(API_ENDPOINTS.attendance.byId(attendanceId), data);
+};
+
+// Fees API
+export const listFees = (params?: {
+  fee_month?: string;
+  class_id?: number;
+  school_id?: number;
+  status?: FeeResponse['status'];
+}): Promise<AxiosResponse<ApiResponse<FeeResponse[]>>> => {
+  return api.get(API_ENDPOINTS.fees.base, { params });
+};
+
+export const createFee = (data: FeeCreateData): Promise<AxiosResponse<ApiResponse<FeeResponse>>> => {
+  return api.post(API_ENDPOINTS.fees.base, data);
+};
+
+export const updateFee = (feeId: number, data: FeeUpdateData): Promise<AxiosResponse<ApiResponse<FeeResponse>>> => {
+  return api.patch(API_ENDPOINTS.fees.byId(feeId), data);
+};
+
+// Reports API
+export const getDashboardReport = (): Promise<AxiosResponse<ApiResponse<DashboardReport>>> => {
+  return api.get(API_ENDPOINTS.reports.dashboard);
 };
 
 // Users API

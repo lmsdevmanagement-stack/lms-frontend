@@ -24,6 +24,17 @@ export const API_ENDPOINTS = {
     base: '/classes',
     byId: (classId: number) => `/classes/${classId}`,
   },
+  attendance: {
+    base: '/attendance',
+    byId: (attendanceId: number) => `/attendance/${attendanceId}`,
+  },
+  fees: {
+    base: '/fees',
+    byId: (feeId: number) => `/fees/${feeId}`,
+  },
+  reports: {
+    dashboard: '/reports/dashboard',
+  },
   users: {
     base: '/users',
     byId: (userId: number) => `/users/${userId}`,

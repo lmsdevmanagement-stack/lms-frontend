@@ -1,10 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { USER_ROLES } from '../constants/roles';
 import * as api from '../services/api';
-import type { ActivityResponse, ClassResponse, ClassRow, SchoolAdminRow, SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
+import type {
+  ActivityResponse,
+  AttendanceResponse,
+  AttendanceRow,
+  ClassResponse,
+  ClassRow,
+  DashboardReport,
+  FeeResponse,
+  FeeRow,
+  OrganizationResponse,
+  SchoolAdminRow,
+  SchoolResponse,
+  SchoolRow,
+  StudentRow,
+  TeacherRow,
+  UserResponse,
+} from '../types';
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
-export type ClassFormState = Pick<ClassRow, 'name' | 'section' | 'description' | 'schoolId' | 'status'>;
+export type ClassFormState = Pick<ClassRow, 'name' | 'section' | 'description' | 'schoolId' | 'teacherId' | 'status'>;
 export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
   password: string;
 };
@@ -17,6 +33,15 @@ export type SchoolAdminFormState = {
 };
 export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 'classId' | 'status'> & {
   password: string;
+};
+export type AttendanceFormState = Pick<AttendanceRow, 'studentId' | 'date' | 'status' | 'notes'>;
+export type FeeFormState = Pick<FeeRow, 'studentId' | 'month' | 'amount' | 'status' | 'notes'>;
+export type OrganizationSettingsFormState = {
+  name: string;
+  slug: string;
+  contactEmail: string;
+  phone: string;
+  address: string;
 };
 
 export const emptySchoolForm: SchoolFormState = {
@@ -39,6 +64,7 @@ export const emptyClassForm: ClassFormState = {
   section: '',
   description: '',
   schoolId: 0,
+  teacherId: 0,
   status: 'active',
 };
 
@@ -57,6 +83,29 @@ export const emptyStudentForm: StudentFormState = {
   classId: 0,
   status: 'active',
   password: '',
+};
+
+export const emptyAttendanceForm: AttendanceFormState = {
+  studentId: 0,
+  date: new Date().toISOString().slice(0, 10),
+  status: 'present',
+  notes: '',
+};
+
+export const emptyFeeForm: FeeFormState = {
+  studentId: 0,
+  month: new Date().toISOString().slice(0, 7),
+  amount: 0,
+  status: 'unpaid',
+  notes: '',
+};
+
+export const emptyOrganizationSettingsForm: OrganizationSettingsFormState = {
+  name: '',
+  slug: '',
+  contactEmail: '',
+  phone: '',
+  address: '',
 };
 
 interface UseDashboardCrudArgs {
@@ -106,12 +155,57 @@ function mapClassRows(classes: ClassResponse[], schools: SchoolResponse[], users
       id: schoolClass.id,
       organizationId: schoolClass.organization_id,
       schoolId: schoolClass.school_id,
+      teacherId: schoolClass.teacher_id || 0,
       name: schoolClass.name,
       section: schoolClass.section || '',
       description: schoolClass.description || '',
       school: school?.name || 'Unassigned',
       students: users.filter((user) => user.role === USER_ROLES.student && user.class_id === schoolClass.id).length,
       status: schoolClass.is_active ? 'active' : 'blocked',
+    };
+  });
+}
+
+function mapAttendanceRows(records: AttendanceResponse[], students: StudentRow[], schools: SchoolResponse[], classes: ClassRow[]): AttendanceRow[] {
+  return records.map((record) => {
+    const student = students.find((item) => item.id === record.student_id);
+    const school = schools.find((item) => item.id === record.school_id);
+    const schoolClass = classes.find((item) => item.id === record.class_id);
+    return {
+      id: record.id,
+      studentId: record.student_id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      classId: record.class_id,
+      student: student?.name || 'Unknown student',
+      school: school?.name || 'Unassigned',
+      className: formatClassName(schoolClass),
+      date: record.attendance_date.slice(0, 10),
+      status: record.status,
+      notes: record.notes || '',
+    };
+  });
+}
+
+function mapFeeRows(records: FeeResponse[], students: StudentRow[], schools: SchoolResponse[], classes: ClassRow[]): FeeRow[] {
+  return records.map((record) => {
+    const student = students.find((item) => item.id === record.student_id);
+    const school = schools.find((item) => item.id === record.school_id);
+    const schoolClass = classes.find((item) => item.id === record.class_id);
+    return {
+      id: record.id,
+      studentId: record.student_id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      classId: record.class_id,
+      student: student?.name || 'Unknown student',
+      school: school?.name || 'Unassigned',
+      className: formatClassName(schoolClass),
+      month: record.fee_month,
+      amount: record.amount,
+      status: record.status,
+      paidAt: record.paid_at || '',
+      notes: record.notes || '',
     };
   });
 }

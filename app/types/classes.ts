@@ -5,6 +5,7 @@ export interface ClassResponse {
   description?: string | null;
   organization_id: number;
   school_id: number;
+  teacher_id?: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -15,6 +16,7 @@ export interface ClassCreateData {
   description?: string | null;
   organization_id?: number | null;
   school_id: number;
+  teacher_id?: number | null;
 }
 
 export interface ClassUpdateData {
@@ -23,5 +25,6 @@ export interface ClassUpdateData {
   description?: string | null;
   organization_id?: number | null;
   school_id?: number;
+  teacher_id?: number | null;
   is_active?: boolean;
 }

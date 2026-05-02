@@ -13,6 +13,15 @@ export type {
   OrganizationUpdateData,
 } from './organizations';
 export type {
+  AttendanceCreateData,
+  AttendanceResponse,
+  AttendanceUpdateData,
+  DashboardReport,
+  FeeCreateData,
+  FeeResponse,
+  FeeUpdateData,
+} from './operations';
+export type {
   SchoolCreateData,
   SchoolResponse,
   SchoolUpdateData,
@@ -31,6 +40,8 @@ export type {
   DashboardSection,
   ClassRow,
   DataTableColumn,
+  AttendanceRow,
+  FeeRow,
   NavigationItem,
   SchoolAdminRow,
   SchoolRow,
