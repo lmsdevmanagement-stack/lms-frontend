@@ -253,6 +253,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     return filterBySearch(scopedRows, searchTerm);
   }, [isSuperAdmin, organizationId, schoolId, teacherRows, searchTerm]);
 
+  const scopedClasses = useMemo(() => {
+    const orgRows = isSuperAdmin ? classRows : classRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [classRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
   const scopedSchoolAdmins = useMemo(() => {
     const orgRows = isSuperAdmin ? schoolAdminRows : schoolAdminRows.filter((row) => row.organizationId === organizationId);
     const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
@@ -324,6 +330,76 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setSaving(true);
     try {
       await api.updateSchool(school.id, { is_active: school.status === 'blocked' });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateClassModal = () => {
+    setEditingClassId(null);
+    setClassForm({
+      ...emptyClassForm,
+      schoolId: scopedSchools[0]?.id || 0,
+    });
+    setClassModalOpen(true);
+  };
+
+  const openEditClassModal = (schoolClass: ClassRow) => {
+    setEditingClassId(schoolClass.id);
+    setClassForm({
+      name: schoolClass.name,
+      section: schoolClass.section,
+      description: schoolClass.description,
+      schoolId: schoolClass.schoolId,
+      status: schoolClass.status,
+    });
+    setClassModalOpen(true);
+  };
+
+  const saveClass = async () => {
+    setSaving(true);
+    try {
+      const selectedSchool = schoolRows.find((school) => school.id === Number(classForm.schoolId));
+      if (editingClassId) {
+        await api.updateClass(editingClassId, {
+          name: classForm.name,
+          section: classForm.section || null,
+          description: classForm.description || null,
+          school_id: Number(classForm.schoolId),
+          organization_id: selectedSchool?.organizationId || organizationId,
+          is_active: classForm.status !== 'blocked',
+        });
+      } else {
+        await api.createClass({
+          name: classForm.name,
+          section: classForm.section || null,
+          description: classForm.description || null,
+          school_id: Number(classForm.schoolId),
+          organization_id: selectedSchool?.organizationId || organizationId,
+        });
+      }
+      setClassModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteClass = async (schoolClass: ClassRow) => {
+    setSaving(true);
+    try {
+      await api.deactivateClass(schoolClass.id);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleClassBlock = async (schoolClass: ClassRow) => {
+    setSaving(true);
+    try {
+      await api.updateClass(schoolClass.id, { is_active: schoolClass.status === 'blocked' });
       await loadDashboardData();
     } finally {
       setSaving(false);
