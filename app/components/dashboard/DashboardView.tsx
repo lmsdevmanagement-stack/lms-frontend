@@ -14,7 +14,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useDashboardAuth } from '../../hooks/useDashboardAuth';
 import { useDashboardCrud } from '../../hooks/useDashboardCrud';
 import { useMounted } from '../../hooks/useMounted';
-import type { ActivityResponse, ClassRow, DashboardSection, DataTableColumn, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
+import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, FeeRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
 
 interface DashboardViewProps {
   initialSection?: DashboardSection;
@@ -24,11 +24,22 @@ const statusVariant = {
   active: 'success',
   blocked: 'destructive',
   trial: 'warning',
+  present: 'success',
+  absent: 'destructive',
+  late: 'warning',
+  excused: 'secondary',
+  paid: 'success',
+  unpaid: 'warning',
 } as const;
 
 export default function DashboardView({ initialSection = 'overview' }: DashboardViewProps) {
   const mounted = useMounted();
   const [searchTerm, setSearchTerm] = useState('');
+  const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
+  const [attendanceClassFilter, setAttendanceClassFilter] = useState(0);
+  const [attendanceSchoolFilter, setAttendanceSchoolFilter] = useState(0);
+  const [feeMonthFilter, setFeeMonthFilter] = useState('');
+  const [feeStatusFilter, setFeeStatusFilter] = useState<'all' | FeeRow['status']>('all');
   const [deleteTarget, setDeleteTarget] = useState<
     | { type: 'school'; row: SchoolRow }
     | { type: 'class'; row: ClassRow }
@@ -119,6 +130,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   const classColumns: DataTableColumn<ClassRow>[] = [
     { key: 'name', header: 'Class', cell: (row) => <span className="font-medium text-slate-950">{row.section ? `${row.name} - ${row.section}` : row.name}</span> },
     { key: 'school', header: 'School', cell: (row) => row.school },
+    { key: 'teacher', header: 'Teacher', cell: (row) => crud.teachers.find((teacher) => teacher.id === row.teacherId)?.name || 'Unassigned' },
     { key: 'students', header: 'Students', cell: (row) => row.students },
     { key: 'description', header: 'Details', cell: (row) => row.description || 'No details' },
     { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
@@ -188,6 +200,53 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           <Button variant="ghost" onClick={() => crud.openEditStudentModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleStudentBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
           <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'student', row })}>Delete</Button>
+        </div>
+      ),
+      className: 'text-right',
+    },
+  ];
+
+  const attendanceRows = crud.attendance.filter((row) => {
+    if (attendanceDateFilter && row.date !== attendanceDateFilter) return false;
+    if (attendanceClassFilter && row.classId !== attendanceClassFilter) return false;
+    if (attendanceSchoolFilter && row.schoolId !== attendanceSchoolFilter) return false;
+    return true;
+  });
+  const attendanceColumns: DataTableColumn<AttendanceRow>[] = [
+    { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
+    { key: 'date', header: 'Date', cell: (row) => row.date },
+    { key: 'className', header: 'Class', cell: (row) => row.className },
+    { key: 'school', header: 'School', cell: (row) => row.school },
+    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
+    { key: 'notes', header: 'Notes', cell: (row) => row.notes || 'No notes' },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (row) => <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditAttendanceModal(row)}>Override</Button>,
+      className: 'text-right',
+    },
+  ];
+
+  const feeRows = crud.fees.filter((row) => {
+    if (feeMonthFilter && row.month !== feeMonthFilter) return false;
+    if (feeStatusFilter !== 'all' && row.status !== feeStatusFilter) return false;
+    return true;
+  });
+  const feeColumns: DataTableColumn<FeeRow>[] = [
+    { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
+    { key: 'month', header: 'Month', cell: (row) => row.month },
+    { key: 'className', header: 'Class', cell: (row) => row.className },
+    { key: 'amount', header: 'Amount', cell: (row) => `Rs ${row.amount.toLocaleString()}` },
+    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (row) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.updateFeeStatus(row, row.status === 'paid' ? 'unpaid' : 'paid')}>
+            Mark {row.status === 'paid' ? 'Unpaid' : 'Paid'}
+          </Button>
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditFeeModal(row)}>Edit</Button>
         </div>
       ),
       className: 'text-right',

@@ -274,21 +274,32 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [schoolAdminRows, setSchoolAdminRows] = useState<SchoolAdminRow[]>([]);
   const [teacherRows, setTeacherRows] = useState<TeacherRow[]>([]);
   const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
+  const [attendanceRows, setAttendanceRows] = useState<AttendanceRow[]>([]);
+  const [feeRows, setFeeRows] = useState<FeeRow[]>([]);
   const [activityRows, setActivityRows] = useState<ActivityResponse[]>([]);
+  const [report, setReport] = useState<DashboardReport | null>(null);
+  const [organization, setOrganization] = useState<OrganizationResponse | null>(null);
   const [schoolModalOpen, setSchoolModalOpen] = useState(false);
   const [classModalOpen, setClassModalOpen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
   const [studentModalOpen, setStudentModalOpen] = useState(false);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [feeModalOpen, setFeeModalOpen] = useState(false);
   const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
   const [editingClassId, setEditingClassId] = useState<number | null>(null);
   const [editingTeacherId, setEditingTeacherId] = useState<number | null>(null);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
+  const [editingAttendanceId, setEditingAttendanceId] = useState<number | null>(null);
+  const [editingFeeId, setEditingFeeId] = useState<number | null>(null);
   const [editingSchoolAdminId, setEditingSchoolAdminId] = useState<number | null>(null);
   const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
   const [classForm, setClassForm] = useState<ClassFormState>(emptyClassForm);
   const [teacherForm, setTeacherForm] = useState<TeacherFormState>(emptyTeacherForm);
   const [studentForm, setStudentForm] = useState<StudentFormState>(emptyStudentForm);
+  const [attendanceForm, setAttendanceForm] = useState<AttendanceFormState>(emptyAttendanceForm);
+  const [feeForm, setFeeForm] = useState<FeeFormState>(emptyFeeForm);
+  const [organizationSettingsForm, setOrganizationSettingsForm] = useState<OrganizationSettingsFormState>(emptyOrganizationSettingsForm);
   const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -299,21 +310,40 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const [schoolsResponse, classesResponse, usersResponse, activitiesResponse] = await Promise.all([
+      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
         api.listSchools(),
         api.listClasses(),
         api.listUsers(),
+        api.listAttendance(),
+        api.listFees(),
+        api.getDashboardReport(),
+        api.listOrganizations(),
         api.listActivities(50),
       ]);
       const schools = schoolsResponse.data.data;
       const classes = classesResponse.data.data;
       const users = usersResponse.data.data;
       const mappedClasses = mapClassRows(classes, schools, users);
+      const mappedStudents = mapStudentRows(users, schools, mappedClasses);
       setSchoolRows(mapSchoolRows(schools, users));
       setClassRows(mappedClasses);
       setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mapTeacherRows(users, schools));
-      setStudentRows(mapStudentRows(users, schools, mappedClasses));
+      setStudentRows(mappedStudents);
+      setAttendanceRows(mapAttendanceRows(attendanceResponse.data.data, mappedStudents, schools, mappedClasses));
+      setFeeRows(mapFeeRows(feesResponse.data.data, mappedStudents, schools, mappedClasses));
+      setReport(reportResponse.data.data);
+      const currentOrganization = organizationsResponse.data.data.find((item) => item.id === organizationId) || organizationsResponse.data.data[0] || null;
+      setOrganization(currentOrganization);
+      if (currentOrganization) {
+        setOrganizationSettingsForm({
+          name: currentOrganization.name,
+          slug: currentOrganization.slug,
+          contactEmail: currentOrganization.contact_email || '',
+          phone: currentOrganization.phone || '',
+          address: currentOrganization.address || '',
+        });
+      }
       setActivityRows(activitiesResponse.data.data);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data');
@@ -322,11 +352,15 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setSchoolAdminRows([]);
       setTeacherRows([]);
       setStudentRows([]);
+      setAttendanceRows([]);
+      setFeeRows([]);
+      setReport(null);
+      setOrganization(null);
       setActivityRows([]);
     } finally {
       setLoading(false);
     }
-  }, [enabled]);
+  }, [enabled, organizationId]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -370,6 +404,18 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     const scopedRows = schoolId ? orgRows.filter((row) => row.school_id === schoolId) : orgRows;
     return filterBySearch(scopedRows, searchTerm);
   }, [activityRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
+  const scopedAttendance = useMemo(() => {
+    const orgRows = isSuperAdmin ? attendanceRows : attendanceRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [attendanceRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
+  const scopedFees = useMemo(() => {
+    const orgRows = isSuperAdmin ? feeRows : feeRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [feeRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
 
   const openCreateSchoolModal = () => {
     setEditingSchoolId(null);
@@ -432,10 +478,11 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
 
   const openCreateClassModal = () => {
     setEditingClassId(null);
-    setClassForm({
-      ...emptyClassForm,
-      schoolId: scopedSchools[0]?.id || 0,
-    });
+      setClassForm({
+        ...emptyClassForm,
+        schoolId: scopedSchools[0]?.id || 0,
+        teacherId: scopedTeachers.find((teacher) => teacher.schoolId === scopedSchools[0]?.id)?.id || 0,
+      });
     setClassModalOpen(true);
   };
 
@@ -446,6 +493,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       section: schoolClass.section,
       description: schoolClass.description,
       schoolId: schoolClass.schoolId,
+      teacherId: schoolClass.teacherId,
       status: schoolClass.status,
     });
     setClassModalOpen(true);
@@ -462,6 +510,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           description: classForm.description || null,
           school_id: Number(classForm.schoolId),
           organization_id: selectedSchool?.organizationId || organizationId,
+          teacher_id: Number(classForm.teacherId) || null,
           is_active: classForm.status !== 'blocked',
         });
       } else {
@@ -471,6 +520,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           description: classForm.description || null,
           school_id: Number(classForm.schoolId),
           organization_id: selectedSchool?.organizationId || organizationId,
+          teacher_id: Number(classForm.teacherId) || null,
         });
       }
       setClassModalOpen(false);
@@ -741,13 +791,155 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const updateTeacherRole = async (teacher: TeacherRow, role: string) => {
+    setSaving(true);
+    try {
+      await api.updateUser(teacher.id, { role: role as never });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateStudentRole = async (student: StudentRow, role: string) => {
+    setSaving(true);
+    try {
+      await api.updateUser(student.id, { role: role as never });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateAttendanceModal = () => {
+    setEditingAttendanceId(null);
+    setAttendanceForm({
+      ...emptyAttendanceForm,
+      studentId: scopedStudents[0]?.id || 0,
+    });
+    setAttendanceModalOpen(true);
+  };
+
+  const openEditAttendanceModal = (attendance: AttendanceRow) => {
+    setEditingAttendanceId(attendance.id);
+    setAttendanceForm({
+      studentId: attendance.studentId,
+      date: attendance.date,
+      status: attendance.status,
+      notes: attendance.notes,
+    });
+    setAttendanceModalOpen(true);
+  };
+
+  const saveAttendance = async () => {
+    setSaving(true);
+    try {
+      if (editingAttendanceId) {
+        await api.updateAttendance(editingAttendanceId, {
+          attendance_date: attendanceForm.date,
+          status: attendanceForm.status,
+          notes: attendanceForm.notes || null,
+        });
+      } else {
+        await api.createAttendance({
+          student_id: Number(attendanceForm.studentId),
+          attendance_date: attendanceForm.date,
+          status: attendanceForm.status,
+          notes: attendanceForm.notes || null,
+        });
+      }
+      setAttendanceModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateFeeModal = () => {
+    setEditingFeeId(null);
+    setFeeForm({
+      ...emptyFeeForm,
+      studentId: scopedStudents[0]?.id || 0,
+    });
+    setFeeModalOpen(true);
+  };
+
+  const openEditFeeModal = (fee: FeeRow) => {
+    setEditingFeeId(fee.id);
+    setFeeForm({
+      studentId: fee.studentId,
+      month: fee.month,
+      amount: fee.amount,
+      status: fee.status,
+      notes: fee.notes,
+    });
+    setFeeModalOpen(true);
+  };
+
+  const saveFee = async () => {
+    setSaving(true);
+    try {
+      if (editingFeeId) {
+        await api.updateFee(editingFeeId, {
+          fee_month: feeForm.month,
+          amount: Number(feeForm.amount),
+          status: feeForm.status,
+          notes: feeForm.notes || null,
+        });
+      } else {
+        await api.createFee({
+          student_id: Number(feeForm.studentId),
+          fee_month: feeForm.month,
+          amount: Number(feeForm.amount),
+          status: feeForm.status,
+          notes: feeForm.notes || null,
+        });
+      }
+      setFeeModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateFeeStatus = async (fee: FeeRow, status: FeeRow['status']) => {
+    setSaving(true);
+    try {
+      await api.updateFee(fee.id, { status });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveOrganizationSettings = async () => {
+    if (!organization) return;
+    setSaving(true);
+    try {
+      await api.updateOrganization(organization.id, {
+        name: organizationSettingsForm.name,
+        slug: organizationSettingsForm.slug,
+        contact_email: organizationSettingsForm.contactEmail || null,
+        phone: organizationSettingsForm.phone || null,
+        address: organizationSettingsForm.address || null,
+      });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     schools: scopedSchools,
     classes: scopedClasses,
     schoolAdmins: scopedSchoolAdmins,
     teachers: scopedTeachers,
     students: scopedStudents,
+    attendance: scopedAttendance,
+    fees: scopedFees,
     activities: scopedActivities,
+    report,
+    organization,
     loading,
     saving,
     error,
@@ -755,26 +947,38 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     classModalOpen,
     teacherModalOpen,
     studentModalOpen,
+    attendanceModalOpen,
+    feeModalOpen,
     schoolAdminModalOpen,
     editingSchoolId,
     editingClassId,
     editingTeacherId,
     editingStudentId,
+    editingAttendanceId,
+    editingFeeId,
     editingSchoolAdminId,
     schoolForm,
     classForm,
     teacherForm,
     studentForm,
+    attendanceForm,
+    feeForm,
+    organizationSettingsForm,
     schoolAdminForm,
     setSchoolForm,
     setClassForm,
     setTeacherForm,
     setStudentForm,
+    setAttendanceForm,
+    setFeeForm,
+    setOrganizationSettingsForm,
     setSchoolAdminForm,
     setSchoolModalOpen,
     setClassModalOpen,
     setTeacherModalOpen,
     setStudentModalOpen,
+    setAttendanceModalOpen,
+    setFeeModalOpen,
     setSchoolAdminModalOpen,
     openCreateSchoolModal,
     openEditSchoolModal,
@@ -804,5 +1008,15 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     deleteStudent,
     toggleStudentBlock,
     saveStudentPermissions,
+    updateTeacherRole,
+    updateStudentRole,
+    openCreateAttendanceModal,
+    openEditAttendanceModal,
+    saveAttendance,
+    openCreateFeeModal,
+    openEditFeeModal,
+    saveFee,
+    updateFeeStatus,
+    saveOrganizationSettings,
   };
 }

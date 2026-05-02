@@ -11,6 +11,11 @@ const validSections: DashboardSection[] = [
   'teachers',
   'classes',
   'students',
+  'attendance',
+  'fees',
+  'reports',
+  'organization-settings',
+  'access-control',
   'teacher-permissions',
   'student-permissions',
 ];
