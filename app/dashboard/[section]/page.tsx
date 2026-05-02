@@ -9,6 +9,7 @@ const validSections: DashboardSection[] = [
   'expenses',
   'admin-permissions',
   'teachers',
+  'classes',
   'students',
   'teacher-permissions',
   'student-permissions',
