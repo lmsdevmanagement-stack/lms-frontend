@@ -1,4 +1,4 @@
-import { Activity, Banknote, Building2, GraduationCap, LayoutDashboard, Shield, ShieldCheck, UserCog, Users } from 'lucide-react';
+import { Activity, Banknote, Building2, GraduationCap, LayoutDashboard, Layers, Shield, ShieldCheck, UserCog, Users } from 'lucide-react';
 import { USER_ROLES } from './roles';
 import type { NavigationItem } from '../types';
 
@@ -10,6 +10,7 @@ export const DASHBOARD_NAV_ITEMS: NavigationItem[] = [
   { id: 'expenses', label: 'Expenses', icon: Banknote, roles: [USER_ROLES.superAdmin] },
   { id: 'admin-permissions', label: 'Admin Permissions', icon: ShieldCheck, roles: [USER_ROLES.superAdmin] },
   { id: 'teachers', label: 'Teachers', icon: GraduationCap, roles: [USER_ROLES.admin] },
+  { id: 'classes', label: 'Classes', icon: Layers, roles: [USER_ROLES.admin] },
   { id: 'students', label: 'Students', icon: Users, roles: [USER_ROLES.admin] },
   { id: 'teacher-permissions', label: 'Teacher Permissions', icon: Shield, roles: [USER_ROLES.admin] },
   { id: 'student-permissions', label: 'Student Permissions', icon: ShieldCheck, roles: [USER_ROLES.admin] },
