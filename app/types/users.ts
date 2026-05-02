@@ -7,6 +7,7 @@ export interface UserResponse {
   role: UserRole;
   organization_id?: number;
   school_id?: number;
+  class_id?: number | null;
   is_active: boolean;
   created_at: string;
   permissions: string[];
@@ -19,6 +20,7 @@ export interface UserCreateData {
   role?: UserRole;
   organization_id?: number | null;
   school_id?: number | null;
+  class_id?: number | null;
 }
 
 export interface UserUpdateData {
@@ -26,6 +28,7 @@ export interface UserUpdateData {
   role?: UserRole;
   organization_id?: number | null;
   school_id?: number | null;
+  class_id?: number | null;
   permissions?: string[];
   is_active?: boolean;
 }

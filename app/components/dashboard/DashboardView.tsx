@@ -14,7 +14,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useDashboardAuth } from '../../hooks/useDashboardAuth';
 import { useDashboardCrud } from '../../hooks/useDashboardCrud';
 import { useMounted } from '../../hooks/useMounted';
-import type { ActivityResponse, DashboardSection, DataTableColumn, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
+import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, FeeRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
 
 interface DashboardViewProps {
   initialSection?: DashboardSection;
@@ -24,13 +24,25 @@ const statusVariant = {
   active: 'success',
   blocked: 'destructive',
   trial: 'warning',
+  present: 'success',
+  absent: 'destructive',
+  late: 'warning',
+  excused: 'secondary',
+  paid: 'success',
+  unpaid: 'warning',
 } as const;
 
 export default function DashboardView({ initialSection = 'overview' }: DashboardViewProps) {
   const mounted = useMounted();
   const [searchTerm, setSearchTerm] = useState('');
+  const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
+  const [attendanceClassFilter, setAttendanceClassFilter] = useState(0);
+  const [attendanceSchoolFilter, setAttendanceSchoolFilter] = useState(0);
+  const [feeMonthFilter, setFeeMonthFilter] = useState('');
+  const [feeStatusFilter, setFeeStatusFilter] = useState<'all' | FeeRow['status']>('all');
   const [deleteTarget, setDeleteTarget] = useState<
     | { type: 'school'; row: SchoolRow }
+    | { type: 'class'; row: ClassRow }
     | { type: 'school-admin'; row: SchoolAdminRow }
     | { type: 'teacher'; row: TeacherRow }
     | { type: 'student'; row: StudentRow }
@@ -56,7 +68,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   ] : [
     { label: 'Teachers', value: String(crud.teachers.length), description: 'Your school teachers' },
     { label: 'Students', value: String(crud.students.length), description: 'Your school students' },
-    { label: 'Teacher Permissions', value: '0', description: 'Permission module pending backend' },
+    { label: 'Classes', value: String(crud.classes.length), description: 'Managed student classes' },
     {
       label: 'Blocked',
       value: String([...crud.teachers, ...crud.students].filter((row) => row.status === 'blocked').length),
@@ -115,6 +127,27 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     },
   ];
 
+  const classColumns: DataTableColumn<ClassRow>[] = [
+    { key: 'name', header: 'Class', cell: (row) => <span className="font-medium text-slate-950">{row.section ? `${row.name} - ${row.section}` : row.name}</span> },
+    { key: 'school', header: 'School', cell: (row) => row.school },
+    { key: 'teacher', header: 'Teacher', cell: (row) => crud.teachers.find((teacher) => teacher.id === row.teacherId)?.name || 'Unassigned' },
+    { key: 'students', header: 'Students', cell: (row) => row.students },
+    { key: 'description', header: 'Details', cell: (row) => row.description || 'No details' },
+    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (row) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => crud.openEditClassModal(row)}>Edit</Button>
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleClassBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
+          <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'class', row })}>Delete</Button>
+        </div>
+      ),
+      className: 'text-right',
+    },
+  ];
+
   const schoolAdminColumns: DataTableColumn<SchoolAdminRow>[] = [
     {
       key: 'name',
@@ -167,6 +200,53 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           <Button variant="ghost" onClick={() => crud.openEditStudentModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleStudentBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
           <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'student', row })}>Delete</Button>
+        </div>
+      ),
+      className: 'text-right',
+    },
+  ];
+
+  const attendanceRows = crud.attendance.filter((row) => {
+    if (attendanceDateFilter && row.date !== attendanceDateFilter) return false;
+    if (attendanceClassFilter && row.classId !== attendanceClassFilter) return false;
+    if (attendanceSchoolFilter && row.schoolId !== attendanceSchoolFilter) return false;
+    return true;
+  });
+  const attendanceColumns: DataTableColumn<AttendanceRow>[] = [
+    { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
+    { key: 'date', header: 'Date', cell: (row) => row.date },
+    { key: 'className', header: 'Class', cell: (row) => row.className },
+    { key: 'school', header: 'School', cell: (row) => row.school },
+    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
+    { key: 'notes', header: 'Notes', cell: (row) => row.notes || 'No notes' },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (row) => <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditAttendanceModal(row)}>Override</Button>,
+      className: 'text-right',
+    },
+  ];
+
+  const feeRows = crud.fees.filter((row) => {
+    if (feeMonthFilter && row.month !== feeMonthFilter) return false;
+    if (feeStatusFilter !== 'all' && row.status !== feeStatusFilter) return false;
+    return true;
+  });
+  const feeColumns: DataTableColumn<FeeRow>[] = [
+    { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
+    { key: 'month', header: 'Month', cell: (row) => row.month },
+    { key: 'className', header: 'Class', cell: (row) => row.className },
+    { key: 'amount', header: 'Amount', cell: (row) => `Rs ${row.amount.toLocaleString()}` },
+    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (row) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.updateFeeStatus(row, row.status === 'paid' ? 'unpaid' : 'paid')}>
+            Mark {row.status === 'paid' ? 'Unpaid' : 'Paid'}
+          </Button>
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditFeeModal(row)}>Edit</Button>
         </div>
       ),
       className: 'text-right',
@@ -241,8 +321,84 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     if (initialSection === 'teachers') {
       return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
     }
+    if (initialSection === 'classes') {
+      return <DataTable title="Classes" description="Create, edit, block, and assign student classes." columns={classColumns} data={crud.classes} loading={crud.loading} />;
+    }
     if (initialSection === 'students') {
       return <DataTable title="Students" description="Create, edit, delete, block, and reset student access." columns={studentColumns} data={crud.students} loading={crud.loading} />;
+    }
+    if (initialSection === 'attendance') {
+      return (
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+              <Input type="date" value={attendanceDateFilter} onChange={(event) => setAttendanceDateFilter(event.target.value)} />
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={attendanceClassFilter} onChange={(event) => setAttendanceClassFilter(Number(event.target.value))}>
+                <option value={0}>All classes</option>
+                {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
+              </select>
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={attendanceSchoolFilter} onChange={(event) => setAttendanceSchoolFilter(Number(event.target.value))}>
+                <option value={0}>All schools</option>
+                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+              </select>
+            </CardContent>
+          </Card>
+          <DataTable title="Attendance" description="View and override attendance by date, class, or school." columns={attendanceColumns} data={attendanceRows} loading={crud.loading} />
+        </div>
+      );
+    }
+    if (initialSection === 'fees') {
+      return (
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="grid gap-3 p-4 md:grid-cols-2">
+              <Input type="month" value={feeMonthFilter} onChange={(event) => setFeeMonthFilter(event.target.value)} />
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={feeStatusFilter} onChange={(event) => setFeeStatusFilter(event.target.value as 'all' | FeeRow['status'])}>
+                <option value="all">All statuses</option>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+              </select>
+            </CardContent>
+          </Card>
+          <DataTable title="Fees" description="Assign monthly fees, update payment status, and track student payments." columns={feeColumns} data={feeRows} loading={crud.loading} />
+        </div>
+      );
+    }
+    if (initialSection === 'reports') {
+      const reportStats: StatCard[] = [
+        { label: 'Total Students', value: String(crud.report?.total_students || 0), description: 'Active student accounts' },
+        { label: 'Total Teachers', value: String(crud.report?.total_teachers || 0), description: 'Active teacher accounts' },
+        { label: 'Attendance', value: `${crud.report?.attendance_present || 0}/${(crud.report?.attendance_present || 0) + (crud.report?.attendance_absent || 0) + (crud.report?.attendance_late || 0)}`, description: 'Present over recorded attendance' },
+        { label: 'Fees Paid', value: `Rs ${(crud.report?.fee_paid_amount || 0).toLocaleString()}`, description: `${crud.report?.fee_unpaid || 0} unpaid records` },
+      ];
+      return <StatsGrid stats={reportStats} />;
+    }
+    if (initialSection === 'organization-settings') {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Organization Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <Input value={crud.organizationSettingsForm.name} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, name: event.target.value })} placeholder="Organization name" />
+            <Input value={crud.organizationSettingsForm.slug} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, slug: event.target.value })} placeholder="Slug" />
+            <Input value={crud.organizationSettingsForm.contactEmail} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, contactEmail: event.target.value })} placeholder="Contact email" />
+            <Input value={crud.organizationSettingsForm.phone} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, phone: event.target.value })} placeholder="Phone" />
+            <Input value={crud.organizationSettingsForm.address} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, address: event.target.value })} placeholder="Address" />
+            <div className="flex justify-end">
+              <Button disabled={crud.saving || !crud.organization} onClick={crud.saveOrganizationSettings}>{crud.saving ? 'Saving...' : 'Save Settings'}</Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    if (initialSection === 'access-control') {
+      return (
+        <div className="space-y-6">
+          <DataTable title="Teacher Access" description="Assign permissions for attendance, fees, reports, and other modules." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
+          <DataTable title="Student Access" description="Control student access to attendance, fees, and reports." columns={studentColumns} data={crud.students} loading={crud.loading} />
+        </div>
+      );
     }
     if (initialSection === 'teacher-permissions' || initialSection === 'student-permissions') {
       return <PermissionsMatrix section={initialSection} />;
@@ -260,6 +416,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         ) : (
           <>
             <DataTable title="Teachers" columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
+            <DataTable title="Classes" columns={classColumns} data={crud.classes} loading={crud.loading} />
             <DataTable title="Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
           </>
         )}
@@ -317,8 +474,17 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         {initialSection === 'teachers' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateTeacherModal}>Create Teacher</Button>
         )}
+        {initialSection === 'classes' && (
+          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateClassModal}>Create Class</Button>
+        )}
         {initialSection === 'students' && (
-          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateStudentModal}>Create Student</Button>
+          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0 || crud.classes.length === 0} onClick={crud.openCreateStudentModal}>Create Student</Button>
+        )}
+        {initialSection === 'attendance' && (
+          <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateAttendanceModal}>Mark Attendance</Button>
+        )}
+        {initialSection === 'fees' && (
+          <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateFeeModal}>Assign Fee</Button>
         )}
       </div>
 
@@ -350,6 +516,57 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => crud.setSchoolModalOpen(false)}>Cancel</Button>
             <Button onClick={crud.saveSchool} disabled={crud.saving}>{crud.editingSchoolId ? 'Save Changes' : 'Create School'}</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={crud.classModalOpen}
+        title={crud.editingClassId ? 'Edit Class' : 'Create Class'}
+        description="Manage class details for student assignment."
+        onClose={() => crud.setClassModalOpen(false)}
+      >
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            School
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.classForm.schoolId} onChange={(event) => crud.setClassForm({ ...crud.classForm, schoolId: Number(event.target.value) })}>
+              <option value={0}>Select school</option>
+              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Class Name
+            <Input value={crud.classForm.name} onChange={(event) => crud.setClassForm({ ...crud.classForm, name: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Section
+            <Input value={crud.classForm.section} onChange={(event) => crud.setClassForm({ ...crud.classForm, section: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Details
+            <Input value={crud.classForm.description} onChange={(event) => crud.setClassForm({ ...crud.classForm, description: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Teacher
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.classForm.teacherId} onChange={(event) => crud.setClassForm({ ...crud.classForm, teacherId: Number(event.target.value) })}>
+              <option value={0}>Unassigned</option>
+              {crud.teachers
+                .filter((teacher) => teacher.schoolId === crud.classForm.schoolId)
+                .map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Status
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.classForm.status} onChange={(event) => crud.setClassForm({ ...crud.classForm, status: event.target.value as ClassRow['status'] })}>
+              <option value="active">Active</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setClassModalOpen(false)}>Cancel</Button>
+            <Button onClick={crud.saveClass} disabled={crud.saving || !crud.classForm.name || !crud.classForm.schoolId}>
+              {crud.saving ? 'Saving...' : crud.editingClassId ? 'Save Changes' : 'Create Class'}
+            </Button>
           </div>
         </div>
       </Modal>
@@ -478,7 +695,15 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           </label>
           <label className="grid gap-2 text-sm font-medium text-slate-700">
             School
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.studentForm.schoolId} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, schoolId: Number(event.target.value) })}>
+            <select
+              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+              value={crud.studentForm.schoolId}
+              onChange={(event) => {
+                const nextSchoolId = Number(event.target.value);
+                const nextClassId = crud.classes.find((schoolClass) => schoolClass.schoolId === nextSchoolId)?.id || 0;
+                crud.setStudentForm({ ...crud.studentForm, schoolId: nextSchoolId, classId: nextClassId });
+              }}
+            >
               <option value={0}>Select school</option>
               {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
             </select>
@@ -491,7 +716,16 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           )}
           <label className="grid gap-2 text-sm font-medium text-slate-700">
             Class
-            <Input value={crud.studentForm.className} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, className: event.target.value })} />
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.studentForm.classId} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, classId: Number(event.target.value) })}>
+              <option value={0}>Select class</option>
+              {crud.classes
+                .filter((schoolClass) => schoolClass.schoolId === crud.studentForm.schoolId && schoolClass.status === 'active')
+                .map((schoolClass) => (
+                  <option key={schoolClass.id} value={schoolClass.id}>
+                    {schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}
+                  </option>
+                ))}
+            </select>
           </label>
           <label className="grid gap-2 text-sm font-medium text-slate-700">
             Status
@@ -502,8 +736,90 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => crud.setStudentModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveStudent} disabled={crud.saving || !crud.studentForm.name || !crud.studentForm.email || !crud.studentForm.schoolId}>
+            <Button onClick={crud.saveStudent} disabled={crud.saving || !crud.studentForm.name || !crud.studentForm.email || !crud.studentForm.schoolId || !crud.studentForm.classId}>
               {crud.saving ? 'Saving...' : crud.editingStudentId ? 'Save Changes' : 'Create Student'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={crud.attendanceModalOpen}
+        title={crud.editingAttendanceId ? 'Override Attendance' : 'Mark Attendance'}
+        description="Record or override a student attendance entry."
+        onClose={() => crud.setAttendanceModalOpen(false)}
+      >
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Student
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.attendanceForm.studentId} disabled={Boolean(crud.editingAttendanceId)} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, studentId: Number(event.target.value) })}>
+              <option value={0}>Select student</option>
+              {crud.students.map((student) => <option key={student.id} value={student.id}>{student.name} - {student.className}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Date
+            <Input type="date" value={crud.attendanceForm.date} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, date: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Status
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.attendanceForm.status} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, status: event.target.value as AttendanceRow['status'] })}>
+              <option value="present">Present</option>
+              <option value="absent">Absent</option>
+              <option value="late">Late</option>
+              <option value="excused">Excused</option>
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Notes
+            <Input value={crud.attendanceForm.notes} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, notes: event.target.value })} />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setAttendanceModalOpen(false)}>Cancel</Button>
+            <Button onClick={crud.saveAttendance} disabled={crud.saving || !crud.attendanceForm.studentId || !crud.attendanceForm.date}>
+              {crud.saving ? 'Saving...' : crud.editingAttendanceId ? 'Save Override' : 'Mark Attendance'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={crud.feeModalOpen}
+        title={crud.editingFeeId ? 'Edit Fee' : 'Assign Monthly Fee'}
+        description="Assign monthly fees and track payment status."
+        onClose={() => crud.setFeeModalOpen(false)}
+      >
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Student
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.feeForm.studentId} disabled={Boolean(crud.editingFeeId)} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, studentId: Number(event.target.value) })}>
+              <option value={0}>Select student</option>
+              {crud.students.map((student) => <option key={student.id} value={student.id}>{student.name} - {student.className}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Month
+            <Input type="month" value={crud.feeForm.month} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, month: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Amount
+            <Input type="number" value={crud.feeForm.amount} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, amount: Number(event.target.value) })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Status
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.feeForm.status} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, status: event.target.value as FeeRow['status'] })}>
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Notes
+            <Input value={crud.feeForm.notes} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, notes: event.target.value })} />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setFeeModalOpen(false)}>Cancel</Button>
+            <Button onClick={crud.saveFee} disabled={crud.saving || !crud.feeForm.studentId || !crud.feeForm.month || crud.feeForm.amount <= 0}>
+              {crud.saving ? 'Saving...' : crud.editingFeeId ? 'Save Fee' : 'Assign Fee'}
             </Button>
           </div>
         </div>
@@ -554,6 +870,8 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
                 if (!deleteTarget) return;
                 if (deleteTarget.type === 'school') {
                   await crud.deleteSchool(deleteTarget.row);
+                } else if (deleteTarget.type === 'class') {
+                  await crud.deleteClass(deleteTarget.row);
                 } else if (deleteTarget.type === 'school-admin') {
                   await crud.deleteSchoolAdmin(deleteTarget.row);
                 } else if (deleteTarget.type === 'student') {

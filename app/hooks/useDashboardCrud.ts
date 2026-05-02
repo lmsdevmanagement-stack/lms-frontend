@@ -1,9 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { USER_ROLES } from '../constants/roles';
 import * as api from '../services/api';
-import type { ActivityResponse, SchoolAdminRow, SchoolResponse, SchoolRow, StudentRow, TeacherRow, UserResponse } from '../types';
+import type {
+  ActivityResponse,
+  AttendanceResponse,
+  AttendanceRow,
+  ClassResponse,
+  ClassRow,
+  DashboardReport,
+  FeeResponse,
+  FeeRow,
+  OrganizationResponse,
+  SchoolAdminRow,
+  SchoolResponse,
+  SchoolRow,
+  StudentRow,
+  TeacherRow,
+  UserResponse,
+} from '../types';
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
+export type ClassFormState = Pick<ClassRow, 'name' | 'section' | 'description' | 'schoolId' | 'teacherId' | 'status'>;
 export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
   password: string;
 };
@@ -14,8 +31,17 @@ export type SchoolAdminFormState = {
   schoolId: number;
   organizationId: number;
 };
-export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 'className' | 'status'> & {
+export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 'classId' | 'status'> & {
   password: string;
+};
+export type AttendanceFormState = Pick<AttendanceRow, 'studentId' | 'date' | 'status' | 'notes'>;
+export type FeeFormState = Pick<FeeRow, 'studentId' | 'month' | 'amount' | 'status' | 'notes'>;
+export type OrganizationSettingsFormState = {
+  name: string;
+  slug: string;
+  contactEmail: string;
+  phone: string;
+  address: string;
 };
 
 export const emptySchoolForm: SchoolFormState = {
@@ -33,6 +59,15 @@ export const emptyTeacherForm: TeacherFormState = {
   password: '',
 };
 
+export const emptyClassForm: ClassFormState = {
+  name: '',
+  section: '',
+  description: '',
+  schoolId: 0,
+  teacherId: 0,
+  status: 'active',
+};
+
 export const emptySchoolAdminForm: SchoolAdminFormState = {
   fullName: '',
   email: '',
@@ -45,9 +80,32 @@ export const emptyStudentForm: StudentFormState = {
   name: '',
   email: '',
   schoolId: 0,
-  className: '',
+  classId: 0,
   status: 'active',
   password: '',
+};
+
+export const emptyAttendanceForm: AttendanceFormState = {
+  studentId: 0,
+  date: new Date().toISOString().slice(0, 10),
+  status: 'present',
+  notes: '',
+};
+
+export const emptyFeeForm: FeeFormState = {
+  studentId: 0,
+  month: new Date().toISOString().slice(0, 7),
+  amount: 0,
+  status: 'unpaid',
+  notes: '',
+};
+
+export const emptyOrganizationSettingsForm: OrganizationSettingsFormState = {
+  name: '',
+  slug: '',
+  contactEmail: '',
+  phone: '',
+  address: '',
 };
 
 interface UseDashboardCrudArgs {
@@ -81,6 +139,73 @@ function mapSchoolRows(schools: SchoolResponse[], users: UserResponse[]): School
       teachers: schoolUsers.filter((user) => user.role === USER_ROLES.teacher).length,
       students: schoolUsers.filter((user) => user.role === USER_ROLES.student).length,
       status: school.is_active ? 'active' : 'blocked',
+    };
+  });
+}
+
+function formatClassName(schoolClass?: Pick<ClassRow, 'name' | 'section'>) {
+  if (!schoolClass) return 'Unassigned';
+  return schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name;
+}
+
+function mapClassRows(classes: ClassResponse[], schools: SchoolResponse[], users: UserResponse[]): ClassRow[] {
+  return classes.map((schoolClass) => {
+    const school = schools.find((item) => item.id === schoolClass.school_id);
+    return {
+      id: schoolClass.id,
+      organizationId: schoolClass.organization_id,
+      schoolId: schoolClass.school_id,
+      teacherId: schoolClass.teacher_id || 0,
+      name: schoolClass.name,
+      section: schoolClass.section || '',
+      description: schoolClass.description || '',
+      school: school?.name || 'Unassigned',
+      students: users.filter((user) => user.role === USER_ROLES.student && user.class_id === schoolClass.id).length,
+      status: schoolClass.is_active ? 'active' : 'blocked',
+    };
+  });
+}
+
+function mapAttendanceRows(records: AttendanceResponse[], students: StudentRow[], schools: SchoolResponse[], classes: ClassRow[]): AttendanceRow[] {
+  return records.map((record) => {
+    const student = students.find((item) => item.id === record.student_id);
+    const school = schools.find((item) => item.id === record.school_id);
+    const schoolClass = classes.find((item) => item.id === record.class_id);
+    return {
+      id: record.id,
+      studentId: record.student_id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      classId: record.class_id,
+      student: student?.name || 'Unknown student',
+      school: school?.name || 'Unassigned',
+      className: formatClassName(schoolClass),
+      date: record.attendance_date.slice(0, 10),
+      status: record.status,
+      notes: record.notes || '',
+    };
+  });
+}
+
+function mapFeeRows(records: FeeResponse[], students: StudentRow[], schools: SchoolResponse[], classes: ClassRow[]): FeeRow[] {
+  return records.map((record) => {
+    const student = students.find((item) => item.id === record.student_id);
+    const school = schools.find((item) => item.id === record.school_id);
+    const schoolClass = classes.find((item) => item.id === record.class_id);
+    return {
+      id: record.id,
+      studentId: record.student_id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      classId: record.class_id,
+      student: student?.name || 'Unknown student',
+      school: school?.name || 'Unassigned',
+      className: formatClassName(schoolClass),
+      month: record.fee_month,
+      amount: record.amount,
+      status: record.status,
+      paidAt: record.paid_at || '',
+      notes: record.notes || '',
     };
   });
 }
@@ -122,19 +247,21 @@ function mapSchoolAdminRows(users: UserResponse[], schools: SchoolResponse[]): S
     });
 }
 
-function mapStudentRows(users: UserResponse[], schools: SchoolResponse[]): StudentRow[] {
+function mapStudentRows(users: UserResponse[], schools: SchoolResponse[], classes: ClassRow[]): StudentRow[] {
   return users
     .filter((user) => user.role === USER_ROLES.student)
     .map((student) => {
       const school = schools.find((item) => item.id === student.school_id);
+      const schoolClass = classes.find((item) => item.id === student.class_id);
       return {
         id: student.id,
         organizationId: student.organization_id || 0,
         schoolId: student.school_id || 0,
+        classId: student.class_id || 0,
         name: student.full_name,
         email: student.email,
         school: school?.name || 'Unassigned',
-        className: 'Unassigned',
+        className: formatClassName(schoolClass),
         permissions: student.permissions || [],
         status: student.is_active ? 'active' : 'blocked',
       };
@@ -143,21 +270,36 @@ function mapStudentRows(users: UserResponse[], schools: SchoolResponse[]): Stude
 
 export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled }: UseDashboardCrudArgs) {
   const [schoolRows, setSchoolRows] = useState<SchoolRow[]>([]);
+  const [classRows, setClassRows] = useState<ClassRow[]>([]);
   const [schoolAdminRows, setSchoolAdminRows] = useState<SchoolAdminRow[]>([]);
   const [teacherRows, setTeacherRows] = useState<TeacherRow[]>([]);
   const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
+  const [attendanceRows, setAttendanceRows] = useState<AttendanceRow[]>([]);
+  const [feeRows, setFeeRows] = useState<FeeRow[]>([]);
   const [activityRows, setActivityRows] = useState<ActivityResponse[]>([]);
+  const [report, setReport] = useState<DashboardReport | null>(null);
+  const [organization, setOrganization] = useState<OrganizationResponse | null>(null);
   const [schoolModalOpen, setSchoolModalOpen] = useState(false);
+  const [classModalOpen, setClassModalOpen] = useState(false);
   const [teacherModalOpen, setTeacherModalOpen] = useState(false);
   const [studentModalOpen, setStudentModalOpen] = useState(false);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [feeModalOpen, setFeeModalOpen] = useState(false);
   const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
+  const [editingClassId, setEditingClassId] = useState<number | null>(null);
   const [editingTeacherId, setEditingTeacherId] = useState<number | null>(null);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
+  const [editingAttendanceId, setEditingAttendanceId] = useState<number | null>(null);
+  const [editingFeeId, setEditingFeeId] = useState<number | null>(null);
   const [editingSchoolAdminId, setEditingSchoolAdminId] = useState<number | null>(null);
   const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
+  const [classForm, setClassForm] = useState<ClassFormState>(emptyClassForm);
   const [teacherForm, setTeacherForm] = useState<TeacherFormState>(emptyTeacherForm);
   const [studentForm, setStudentForm] = useState<StudentFormState>(emptyStudentForm);
+  const [attendanceForm, setAttendanceForm] = useState<AttendanceFormState>(emptyAttendanceForm);
+  const [feeForm, setFeeForm] = useState<FeeFormState>(emptyFeeForm);
+  const [organizationSettingsForm, setOrganizationSettingsForm] = useState<OrganizationSettingsFormState>(emptyOrganizationSettingsForm);
   const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -168,29 +310,57 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const [schoolsResponse, usersResponse, activitiesResponse] = await Promise.all([
+      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
         api.listSchools(),
+        api.listClasses(),
         api.listUsers(),
+        api.listAttendance(),
+        api.listFees(),
+        api.getDashboardReport(),
+        api.listOrganizations(),
         api.listActivities(50),
       ]);
       const schools = schoolsResponse.data.data;
+      const classes = classesResponse.data.data;
       const users = usersResponse.data.data;
+      const mappedClasses = mapClassRows(classes, schools, users);
+      const mappedStudents = mapStudentRows(users, schools, mappedClasses);
       setSchoolRows(mapSchoolRows(schools, users));
+      setClassRows(mappedClasses);
       setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mapTeacherRows(users, schools));
-      setStudentRows(mapStudentRows(users, schools));
+      setStudentRows(mappedStudents);
+      setAttendanceRows(mapAttendanceRows(attendanceResponse.data.data, mappedStudents, schools, mappedClasses));
+      setFeeRows(mapFeeRows(feesResponse.data.data, mappedStudents, schools, mappedClasses));
+      setReport(reportResponse.data.data);
+      const currentOrganization = organizationsResponse.data.data.find((item) => item.id === organizationId) || organizationsResponse.data.data[0] || null;
+      setOrganization(currentOrganization);
+      if (currentOrganization) {
+        setOrganizationSettingsForm({
+          name: currentOrganization.name,
+          slug: currentOrganization.slug,
+          contactEmail: currentOrganization.contact_email || '',
+          phone: currentOrganization.phone || '',
+          address: currentOrganization.address || '',
+        });
+      }
       setActivityRows(activitiesResponse.data.data);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data');
       setSchoolRows([]);
+      setClassRows([]);
       setSchoolAdminRows([]);
       setTeacherRows([]);
       setStudentRows([]);
+      setAttendanceRows([]);
+      setFeeRows([]);
+      setReport(null);
+      setOrganization(null);
       setActivityRows([]);
     } finally {
       setLoading(false);
     }
-  }, [enabled]);
+  }, [enabled, organizationId]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -211,6 +381,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     return filterBySearch(scopedRows, searchTerm);
   }, [isSuperAdmin, organizationId, schoolId, teacherRows, searchTerm]);
 
+  const scopedClasses = useMemo(() => {
+    const orgRows = isSuperAdmin ? classRows : classRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [classRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
   const scopedSchoolAdmins = useMemo(() => {
     const orgRows = isSuperAdmin ? schoolAdminRows : schoolAdminRows.filter((row) => row.organizationId === organizationId);
     const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
@@ -228,6 +404,18 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     const scopedRows = schoolId ? orgRows.filter((row) => row.school_id === schoolId) : orgRows;
     return filterBySearch(scopedRows, searchTerm);
   }, [activityRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
+  const scopedAttendance = useMemo(() => {
+    const orgRows = isSuperAdmin ? attendanceRows : attendanceRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [attendanceRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
+  const scopedFees = useMemo(() => {
+    const orgRows = isSuperAdmin ? feeRows : feeRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [feeRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
 
   const openCreateSchoolModal = () => {
     setEditingSchoolId(null);
@@ -282,6 +470,80 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setSaving(true);
     try {
       await api.updateSchool(school.id, { is_active: school.status === 'blocked' });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateClassModal = () => {
+    setEditingClassId(null);
+      setClassForm({
+        ...emptyClassForm,
+        schoolId: scopedSchools[0]?.id || 0,
+        teacherId: scopedTeachers.find((teacher) => teacher.schoolId === scopedSchools[0]?.id)?.id || 0,
+      });
+    setClassModalOpen(true);
+  };
+
+  const openEditClassModal = (schoolClass: ClassRow) => {
+    setEditingClassId(schoolClass.id);
+    setClassForm({
+      name: schoolClass.name,
+      section: schoolClass.section,
+      description: schoolClass.description,
+      schoolId: schoolClass.schoolId,
+      teacherId: schoolClass.teacherId,
+      status: schoolClass.status,
+    });
+    setClassModalOpen(true);
+  };
+
+  const saveClass = async () => {
+    setSaving(true);
+    try {
+      const selectedSchool = schoolRows.find((school) => school.id === Number(classForm.schoolId));
+      if (editingClassId) {
+        await api.updateClass(editingClassId, {
+          name: classForm.name,
+          section: classForm.section || null,
+          description: classForm.description || null,
+          school_id: Number(classForm.schoolId),
+          organization_id: selectedSchool?.organizationId || organizationId,
+          teacher_id: Number(classForm.teacherId) || null,
+          is_active: classForm.status !== 'blocked',
+        });
+      } else {
+        await api.createClass({
+          name: classForm.name,
+          section: classForm.section || null,
+          description: classForm.description || null,
+          school_id: Number(classForm.schoolId),
+          organization_id: selectedSchool?.organizationId || organizationId,
+          teacher_id: Number(classForm.teacherId) || null,
+        });
+      }
+      setClassModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteClass = async (schoolClass: ClassRow) => {
+    setSaving(true);
+    try {
+      await api.deactivateClass(schoolClass.id);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleClassBlock = async (schoolClass: ClassRow) => {
+    setSaving(true);
+    try {
+      await api.updateClass(schoolClass.id, { is_active: schoolClass.status === 'blocked' });
       await loadDashboardData();
     } finally {
       setSaving(false);
@@ -447,10 +709,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   };
 
   const openCreateStudentModal = () => {
+    const defaultSchoolId = scopedSchools[0]?.id || 0;
     setEditingStudentId(null);
     setStudentForm({
       ...emptyStudentForm,
-      schoolId: scopedSchools[0]?.id || 0,
+      schoolId: defaultSchoolId,
+      classId: scopedClasses.find((schoolClass) => schoolClass.schoolId === defaultSchoolId)?.id || 0,
     });
     setStudentModalOpen(true);
   };
@@ -461,7 +725,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       name: student.name,
       email: student.email,
       schoolId: student.schoolId,
-      className: student.className,
+      classId: student.classId,
       status: student.status,
       password: '',
     });
@@ -476,6 +740,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
         await api.updateUser(editingStudentId, {
           full_name: studentForm.name,
           school_id: Number(studentForm.schoolId),
+          class_id: Number(studentForm.classId) || null,
           is_active: studentForm.status !== 'blocked',
         });
       } else {
@@ -486,6 +751,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           role: USER_ROLES.student,
           organization_id: selectedSchool?.organizationId || organizationId,
           school_id: Number(studentForm.schoolId),
+          class_id: Number(studentForm.classId) || null,
         });
       }
       setStudentModalOpen(false);
@@ -525,40 +791,205 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const updateTeacherRole = async (teacher: TeacherRow, role: string) => {
+    setSaving(true);
+    try {
+      await api.updateUser(teacher.id, { role: role as never });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateStudentRole = async (student: StudentRow, role: string) => {
+    setSaving(true);
+    try {
+      await api.updateUser(student.id, { role: role as never });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateAttendanceModal = () => {
+    setEditingAttendanceId(null);
+    setAttendanceForm({
+      ...emptyAttendanceForm,
+      studentId: scopedStudents[0]?.id || 0,
+    });
+    setAttendanceModalOpen(true);
+  };
+
+  const openEditAttendanceModal = (attendance: AttendanceRow) => {
+    setEditingAttendanceId(attendance.id);
+    setAttendanceForm({
+      studentId: attendance.studentId,
+      date: attendance.date,
+      status: attendance.status,
+      notes: attendance.notes,
+    });
+    setAttendanceModalOpen(true);
+  };
+
+  const saveAttendance = async () => {
+    setSaving(true);
+    try {
+      if (editingAttendanceId) {
+        await api.updateAttendance(editingAttendanceId, {
+          attendance_date: attendanceForm.date,
+          status: attendanceForm.status,
+          notes: attendanceForm.notes || null,
+        });
+      } else {
+        await api.createAttendance({
+          student_id: Number(attendanceForm.studentId),
+          attendance_date: attendanceForm.date,
+          status: attendanceForm.status,
+          notes: attendanceForm.notes || null,
+        });
+      }
+      setAttendanceModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateFeeModal = () => {
+    setEditingFeeId(null);
+    setFeeForm({
+      ...emptyFeeForm,
+      studentId: scopedStudents[0]?.id || 0,
+    });
+    setFeeModalOpen(true);
+  };
+
+  const openEditFeeModal = (fee: FeeRow) => {
+    setEditingFeeId(fee.id);
+    setFeeForm({
+      studentId: fee.studentId,
+      month: fee.month,
+      amount: fee.amount,
+      status: fee.status,
+      notes: fee.notes,
+    });
+    setFeeModalOpen(true);
+  };
+
+  const saveFee = async () => {
+    setSaving(true);
+    try {
+      if (editingFeeId) {
+        await api.updateFee(editingFeeId, {
+          fee_month: feeForm.month,
+          amount: Number(feeForm.amount),
+          status: feeForm.status,
+          notes: feeForm.notes || null,
+        });
+      } else {
+        await api.createFee({
+          student_id: Number(feeForm.studentId),
+          fee_month: feeForm.month,
+          amount: Number(feeForm.amount),
+          status: feeForm.status,
+          notes: feeForm.notes || null,
+        });
+      }
+      setFeeModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateFeeStatus = async (fee: FeeRow, status: FeeRow['status']) => {
+    setSaving(true);
+    try {
+      await api.updateFee(fee.id, { status });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveOrganizationSettings = async () => {
+    if (!organization) return;
+    setSaving(true);
+    try {
+      await api.updateOrganization(organization.id, {
+        name: organizationSettingsForm.name,
+        slug: organizationSettingsForm.slug,
+        contact_email: organizationSettingsForm.contactEmail || null,
+        phone: organizationSettingsForm.phone || null,
+        address: organizationSettingsForm.address || null,
+      });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     schools: scopedSchools,
+    classes: scopedClasses,
     schoolAdmins: scopedSchoolAdmins,
     teachers: scopedTeachers,
     students: scopedStudents,
+    attendance: scopedAttendance,
+    fees: scopedFees,
     activities: scopedActivities,
+    report,
+    organization,
     loading,
     saving,
     error,
     schoolModalOpen,
+    classModalOpen,
     teacherModalOpen,
     studentModalOpen,
+    attendanceModalOpen,
+    feeModalOpen,
     schoolAdminModalOpen,
     editingSchoolId,
+    editingClassId,
     editingTeacherId,
     editingStudentId,
+    editingAttendanceId,
+    editingFeeId,
     editingSchoolAdminId,
     schoolForm,
+    classForm,
     teacherForm,
     studentForm,
+    attendanceForm,
+    feeForm,
+    organizationSettingsForm,
     schoolAdminForm,
     setSchoolForm,
+    setClassForm,
     setTeacherForm,
     setStudentForm,
+    setAttendanceForm,
+    setFeeForm,
+    setOrganizationSettingsForm,
     setSchoolAdminForm,
     setSchoolModalOpen,
+    setClassModalOpen,
     setTeacherModalOpen,
     setStudentModalOpen,
+    setAttendanceModalOpen,
+    setFeeModalOpen,
     setSchoolAdminModalOpen,
     openCreateSchoolModal,
     openEditSchoolModal,
     saveSchool,
     deleteSchool,
     toggleSchoolBlock,
+    openCreateClassModal,
+    openEditClassModal,
+    saveClass,
+    deleteClass,
+    toggleClassBlock,
     openCreateSchoolAdminModal,
     openEditSchoolAdminModal,
     saveSchoolAdmin,
@@ -577,5 +1008,15 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     deleteStudent,
     toggleStudentBlock,
     saveStudentPermissions,
+    updateTeacherRole,
+    updateStudentRole,
+    openCreateAttendanceModal,
+    openEditAttendanceModal,
+    saveAttendance,
+    openCreateFeeModal,
+    openEditFeeModal,
+    saveFee,
+    updateFeeStatus,
+    saveOrganizationSettings,
   };
 }

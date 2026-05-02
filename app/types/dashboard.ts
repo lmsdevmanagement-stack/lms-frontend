@@ -12,6 +12,12 @@ export interface NavigationItem {
 export type DashboardSection =
   | 'overview'
   | 'schools'
+  | 'classes'
+  | 'attendance'
+  | 'fees'
+  | 'reports'
+  | 'organization-settings'
+  | 'access-control'
   | 'school-admins'
   | 'activities'
   | 'expenses'
@@ -50,6 +56,19 @@ export interface TeacherRow {
   status: 'active' | 'blocked';
 }
 
+export interface ClassRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  teacherId: number;
+  name: string;
+  section: string;
+  description: string;
+  school: string;
+  students: number;
+  status: 'active' | 'blocked';
+}
+
 export interface SchoolAdminRow {
   id: number;
   organizationId: number;
@@ -65,12 +84,43 @@ export interface StudentRow {
   id: number;
   organizationId: number;
   schoolId: number;
+  classId: number;
   name: string;
   email: string;
   school: string;
   className: string;
   permissions: string[];
   status: 'active' | 'blocked';
+}
+
+export interface AttendanceRow {
+  id: number;
+  studentId: number;
+  organizationId: number;
+  schoolId: number;
+  classId: number;
+  student: string;
+  school: string;
+  className: string;
+  date: string;
+  status: 'present' | 'absent' | 'late' | 'excused';
+  notes: string;
+}
+
+export interface FeeRow {
+  id: number;
+  studentId: number;
+  organizationId: number;
+  schoolId: number;
+  classId: number;
+  student: string;
+  school: string;
+  className: string;
+  month: string;
+  amount: number;
+  status: 'paid' | 'unpaid';
+  paidAt: string;
+  notes: string;
 }
 
 export interface DataTableColumn<T> {
