@@ -5,6 +5,9 @@ import { APP_ROUTES } from '../constants/routes';
 import type {
   ApiResponse,
   ActivityResponse,
+  ClassCreateData,
+  ClassResponse,
+  ClassUpdateData,
   LoginCredentials,
   OrganizationCreateData,
   OrganizationResponse,
@@ -154,6 +157,30 @@ export const updateSchool = (
 
 export const deactivateSchool = (schoolId: number): Promise<AxiosResponse<ApiResponse<SchoolResponse>>> => {
   return api.delete(API_ENDPOINTS.schools.byId(schoolId));
+};
+
+// Classes API
+export const listClasses = (): Promise<AxiosResponse<ApiResponse<ClassResponse[]>>> => {
+  return api.get(API_ENDPOINTS.classes.base);
+};
+
+export const createClass = (data: ClassCreateData): Promise<AxiosResponse<ApiResponse<ClassResponse>>> => {
+  return api.post(API_ENDPOINTS.classes.base, data);
+};
+
+export const getClass = (classId: number): Promise<AxiosResponse<ApiResponse<ClassResponse>>> => {
+  return api.get(API_ENDPOINTS.classes.byId(classId));
+};
+
+export const updateClass = (
+  classId: number,
+  data: ClassUpdateData
+): Promise<AxiosResponse<ApiResponse<ClassResponse>>> => {
+  return api.patch(API_ENDPOINTS.classes.byId(classId), data);
+};
+
+export const deactivateClass = (classId: number): Promise<AxiosResponse<ApiResponse<ClassResponse>>> => {
+  return api.delete(API_ENDPOINTS.classes.byId(classId));
 };
 
 // Users API

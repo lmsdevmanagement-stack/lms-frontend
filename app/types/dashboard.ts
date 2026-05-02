@@ -12,6 +12,7 @@ export interface NavigationItem {
 export type DashboardSection =
   | 'overview'
   | 'schools'
+  | 'classes'
   | 'school-admins'
   | 'activities'
   | 'expenses'
@@ -50,6 +51,18 @@ export interface TeacherRow {
   status: 'active' | 'blocked';
 }
 
+export interface ClassRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  name: string;
+  section: string;
+  description: string;
+  school: string;
+  students: number;
+  status: 'active' | 'blocked';
+}
+
 export interface SchoolAdminRow {
   id: number;
   organizationId: number;
@@ -65,6 +78,7 @@ export interface StudentRow {
   id: number;
   organizationId: number;
   schoolId: number;
+  classId: number;
   name: string;
   email: string;
   school: string;

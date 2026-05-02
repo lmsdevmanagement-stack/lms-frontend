@@ -23,7 +23,13 @@ export type {
   UserUpdateData,
 } from './users';
 export type {
+  ClassCreateData,
+  ClassResponse,
+  ClassUpdateData,
+} from './classes';
+export type {
   DashboardSection,
+  ClassRow,
   DataTableColumn,
   NavigationItem,
   SchoolAdminRow,

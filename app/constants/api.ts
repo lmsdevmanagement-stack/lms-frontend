@@ -20,6 +20,10 @@ export const API_ENDPOINTS = {
     base: '/schools',
     byId: (schoolId: number) => `/schools/${schoolId}`,
   },
+  classes: {
+    base: '/classes',
+    byId: (classId: number) => `/classes/${classId}`,
+  },
   users: {
     base: '/users',
     byId: (userId: number) => `/users/${userId}`,
