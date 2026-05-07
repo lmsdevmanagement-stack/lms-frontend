@@ -43,6 +43,12 @@ export type OrganizationSettingsFormState = {
   phone: string;
   address: string;
 };
+export type ProfileFormState = {
+  fullName: string;
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+};
 
 export const emptySchoolForm: SchoolFormState = {
   name: '',
@@ -108,12 +114,20 @@ export const emptyOrganizationSettingsForm: OrganizationSettingsFormState = {
   address: '',
 };
 
+export const emptyProfileForm: ProfileFormState = {
+  fullName: '',
+  email: '',
+  currentPassword: '',
+  newPassword: '',
+};
+
 interface UseDashboardCrudArgs {
   isSuperAdmin: boolean;
   organizationId: number;
   schoolId: number | null;
   searchTerm: string;
   enabled: boolean;
+  currentUser?: UserResponse | null;
 }
 
 function filterBySearch<T extends object>(rows: T[], searchTerm: string) {
@@ -268,7 +282,7 @@ function mapStudentRows(users: UserResponse[], schools: SchoolResponse[], classe
     });
 }
 
-export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled }: UseDashboardCrudArgs) {
+export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled, currentUser }: UseDashboardCrudArgs) {
   const [schoolRows, setSchoolRows] = useState<SchoolRow[]>([]);
   const [classRows, setClassRows] = useState<ClassRow[]>([]);
   const [schoolAdminRows, setSchoolAdminRows] = useState<SchoolAdminRow[]>([]);
@@ -300,6 +314,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [attendanceForm, setAttendanceForm] = useState<AttendanceFormState>(emptyAttendanceForm);
   const [feeForm, setFeeForm] = useState<FeeFormState>(emptyFeeForm);
   const [organizationSettingsForm, setOrganizationSettingsForm] = useState<OrganizationSettingsFormState>(emptyOrganizationSettingsForm);
+  const [profileForm, setProfileForm] = useState<ProfileFormState>(emptyProfileForm);
   const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -345,6 +360,13 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
         });
       }
       setActivityRows(activitiesResponse.data.data);
+      if (currentUser) {
+        setProfileForm((current) => ({
+          ...current,
+          fullName: currentUser.full_name,
+          email: currentUser.email,
+        }));
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load dashboard data');
       setSchoolRows([]);
@@ -360,7 +382,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     } finally {
       setLoading(false);
     }
-  }, [enabled, organizationId]);
+  }, [enabled, organizationId, currentUser]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -929,6 +951,32 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const saveMyProfile = async () => {
+    setSaving(true);
+    try {
+      await api.updateMyProfile({
+        full_name: profileForm.fullName,
+        email: profileForm.email,
+      });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveMyPassword = async () => {
+    setSaving(true);
+    try {
+      await api.updateMyPassword({
+        current_password: profileForm.currentPassword,
+        new_password: profileForm.newPassword,
+      });
+      setProfileForm({ ...profileForm, currentPassword: '', newPassword: '' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     schools: scopedSchools,
     classes: scopedClasses,
@@ -964,6 +1012,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     attendanceForm,
     feeForm,
     organizationSettingsForm,
+    profileForm,
     schoolAdminForm,
     setSchoolForm,
     setClassForm,
@@ -972,6 +1021,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setAttendanceForm,
     setFeeForm,
     setOrganizationSettingsForm,
+    setProfileForm,
     setSchoolAdminForm,
     setSchoolModalOpen,
     setClassModalOpen,
@@ -1018,5 +1068,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     saveFee,
     updateFeeStatus,
     saveOrganizationSettings,
+    saveMyProfile,
+    saveMyPassword,
   };
 }

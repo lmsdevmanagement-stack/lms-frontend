@@ -32,3 +32,13 @@ export interface UserUpdateData {
   permissions?: string[];
   is_active?: boolean;
 }
+
+export interface UserProfileUpdateData {
+  full_name?: string;
+  email?: string;
+}
+
+export interface UserPasswordUpdateData {
+  current_password: string;
+  new_password: string;
+}

@@ -38,5 +38,7 @@ export const API_ENDPOINTS = {
   users: {
     base: '/users',
     byId: (userId: number) => `/users/${userId}`,
+    meProfile: '/users/me/profile',
+    mePassword: '/users/me/password',
   },
 } as const;

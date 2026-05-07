@@ -19,4 +19,9 @@ export const DASHBOARD_NAV_ITEMS: NavigationItem[] = [
   { id: 'access-control', label: 'Access Control', icon: Shield, roles: [USER_ROLES.admin] },
   { id: 'teacher-permissions', label: 'Teacher Permissions', icon: Shield, roles: [USER_ROLES.admin] },
   { id: 'student-permissions', label: 'Student Permissions', icon: ShieldCheck, roles: [USER_ROLES.admin] },
+  { id: 'classes', label: 'My Classes', icon: Layers, roles: [USER_ROLES.teacher] },
+  { id: 'students', label: 'My Students', icon: Users, roles: [USER_ROLES.teacher] },
+  { id: 'attendance', label: 'Attendance', icon: CalendarCheck, roles: [USER_ROLES.teacher] },
+  { id: 'reports', label: 'Reports', icon: BarChart3, roles: [USER_ROLES.teacher] },
+  { id: 'profile', label: 'Profile', icon: Settings, roles: [USER_ROLES.teacher] },
 ];

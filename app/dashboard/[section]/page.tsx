@@ -16,6 +16,7 @@ const validSections: DashboardSection[] = [
   'reports',
   'organization-settings',
   'access-control',
+  'profile',
   'teacher-permissions',
   'student-permissions',
 ];

@@ -28,6 +28,8 @@ export type {
 } from './schools';
 export type {
   UserCreateData,
+  UserPasswordUpdateData,
+  UserProfileUpdateData,
   UserResponse,
   UserUpdateData,
 } from './users';

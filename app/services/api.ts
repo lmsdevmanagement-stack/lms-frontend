@@ -27,6 +27,8 @@ import type {
   SchoolUpdateData,
   TokenResponse,
   UserCreateData,
+  UserPasswordUpdateData,
+  UserProfileUpdateData,
   UserResponse,
   UserUpdateData,
 } from '../types';
@@ -248,6 +250,14 @@ export const getUser = (userId: number): Promise<AxiosResponse<ApiResponse<UserR
 
 export const updateUser = (userId: number, data: UserUpdateData): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {
   return api.patch(API_ENDPOINTS.users.byId(userId), data);
+};
+
+export const updateMyProfile = (data: UserProfileUpdateData): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {
+  return api.patch(API_ENDPOINTS.users.meProfile, data);
+};
+
+export const updateMyPassword = (data: UserPasswordUpdateData): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {
+  return api.patch(API_ENDPOINTS.users.mePassword, data);
 };
 
 export const deactivateUser = (userId: number): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {

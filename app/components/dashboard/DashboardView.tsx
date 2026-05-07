@@ -55,7 +55,9 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     | null
   >(null);
   const { user, role, isAuthenticated, isSuperAdmin, organizationId, schoolId, handleLogout } = useDashboardAuth();
-  const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated });
+  const isTeacher = role === 'teacher';
+  const isAdminUser = isSuperAdmin || role === 'admin';
+  const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated, currentUser: user });
   const stats: StatCard[] = isSuperAdmin ? [
     { label: 'Schools', value: String(crud.schools.length), description: 'All managed schools' },
     { label: 'School Admins', value: String(crud.schoolAdmins.length), description: 'Admins assigned to schools' },
@@ -139,9 +141,13 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
+          {!isTeacher && (
+            <>
           <Button variant="ghost" onClick={() => crud.openEditClassModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleClassBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
           <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'class', row })}>Delete</Button>
+            </>
+          )}
         </div>
       ),
       className: 'text-right',
@@ -195,11 +201,15 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
+          {!isTeacher && (
+            <>
           <Button variant="ghost" onClick={() => setPermissionTarget({ type: 'student', row, name: row.name, school: row.school, email: row.email, permissions: row.permissions })}>Permissions</Button>
           <Button variant="ghost">Password</Button>
           <Button variant="ghost" onClick={() => crud.openEditStudentModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleStudentBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
           <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'student', row })}>Delete</Button>
+            </>
+          )}
         </div>
       ),
       className: 'text-right',
@@ -392,6 +402,36 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </Card>
       );
     }
+    if (initialSection === 'profile') {
+      return (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <Input value={crud.profileForm.fullName} onChange={(event) => crud.setProfileForm({ ...crud.profileForm, fullName: event.target.value })} placeholder="Full name" />
+              <Input type="email" value={crud.profileForm.email} onChange={(event) => crud.setProfileForm({ ...crud.profileForm, email: event.target.value })} placeholder="Email" />
+              <div className="flex justify-end">
+                <Button disabled={crud.saving || !crud.profileForm.fullName || !crud.profileForm.email} onClick={crud.saveMyProfile}>{crud.saving ? 'Saving...' : 'Save Profile'}</Button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Password</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <Input type="password" value={crud.profileForm.currentPassword} onChange={(event) => crud.setProfileForm({ ...crud.profileForm, currentPassword: event.target.value })} placeholder="Current password" />
+              <Input type="password" value={crud.profileForm.newPassword} onChange={(event) => crud.setProfileForm({ ...crud.profileForm, newPassword: event.target.value })} placeholder="New password" />
+              <div className="flex justify-end">
+                <Button disabled={crud.saving || !crud.profileForm.currentPassword || !crud.profileForm.newPassword} onClick={crud.saveMyPassword}>{crud.saving ? 'Saving...' : 'Change Password'}</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
     if (initialSection === 'access-control') {
       return (
         <div className="space-y-6">
@@ -459,10 +499,10 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium capitalize text-slate-500">
-            {isSuperAdmin ? 'Full system control' : 'Organization-scoped access'}
+            {isSuperAdmin ? 'Full system control' : isTeacher ? 'Teacher classroom access' : 'Organization-scoped access'}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-normal text-slate-950">
-            {isSuperAdmin ? 'Super Admin Dashboard' : 'School Admin Dashboard'}
+            {isSuperAdmin ? 'Super Admin Dashboard' : isTeacher ? 'Teacher Dashboard' : 'School Admin Dashboard'}
           </h1>
         </div>
         {initialSection === 'schools' && (
@@ -471,19 +511,19 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         {initialSection === 'school-admins' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={() => crud.openCreateSchoolAdminModal()}>Create School Admin</Button>
         )}
-        {initialSection === 'teachers' && (
+        {isAdminUser && initialSection === 'teachers' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateTeacherModal}>Create Teacher</Button>
         )}
-        {initialSection === 'classes' && (
+        {isAdminUser && initialSection === 'classes' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateClassModal}>Create Class</Button>
         )}
-        {initialSection === 'students' && (
+        {isAdminUser && initialSection === 'students' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0 || crud.classes.length === 0} onClick={crud.openCreateStudentModal}>Create Student</Button>
         )}
         {initialSection === 'attendance' && (
           <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateAttendanceModal}>Mark Attendance</Button>
         )}
-        {initialSection === 'fees' && (
+        {isAdminUser && initialSection === 'fees' && (
           <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateFeeModal}>Assign Fee</Button>
         )}
       </div>

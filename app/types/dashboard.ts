@@ -18,6 +18,7 @@ export type DashboardSection =
   | 'reports'
   | 'organization-settings'
   | 'access-control'
+  | 'profile'
   | 'school-admins'
   | 'activities'
   | 'expenses'
