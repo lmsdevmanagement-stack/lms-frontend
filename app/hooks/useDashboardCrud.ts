@@ -422,6 +422,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [studentRows, setStudentRows] = useState<StudentRow[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<AttendanceRow[]>([]);
   const [feeRows, setFeeRows] = useState<FeeRow[]>([]);
+  const [scheduleRows, setScheduleRows] = useState<ScheduleRow[]>([]);
+  const [workRows, setWorkRows] = useState<WorkRow[]>([]);
+  const [resultRows, setResultRows] = useState<ResultRow[]>([]);
   const [activityRows, setActivityRows] = useState<ActivityResponse[]>([]);
   const [report, setReport] = useState<DashboardReport | null>(null);
   const [organization, setOrganization] = useState<OrganizationResponse | null>(null);
@@ -431,6 +434,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [studentModalOpen, setStudentModalOpen] = useState(false);
   const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
   const [feeModalOpen, setFeeModalOpen] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [workModalOpen, setWorkModalOpen] = useState(false);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
   const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
   const [editingClassId, setEditingClassId] = useState<number | null>(null);
@@ -438,6 +444,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
   const [editingAttendanceId, setEditingAttendanceId] = useState<number | null>(null);
   const [editingFeeId, setEditingFeeId] = useState<number | null>(null);
+  const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
+  const [editingWorkId, setEditingWorkId] = useState<number | null>(null);
+  const [editingResultId, setEditingResultId] = useState<number | null>(null);
   const [editingSchoolAdminId, setEditingSchoolAdminId] = useState<number | null>(null);
   const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
   const [classForm, setClassForm] = useState<ClassFormState>(emptyClassForm);
@@ -445,6 +454,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [studentForm, setStudentForm] = useState<StudentFormState>(emptyStudentForm);
   const [attendanceForm, setAttendanceForm] = useState<AttendanceFormState>(emptyAttendanceForm);
   const [feeForm, setFeeForm] = useState<FeeFormState>(emptyFeeForm);
+  const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(emptyScheduleForm);
+  const [workForm, setWorkForm] = useState<WorkFormState>(emptyWorkForm);
+  const [resultForm, setResultForm] = useState<ResultFormState>(emptyResultForm);
   const [organizationSettingsForm, setOrganizationSettingsForm] = useState<OrganizationSettingsFormState>(emptyOrganizationSettingsForm);
   const [profileForm, setProfileForm] = useState<ProfileFormState>(emptyProfileForm);
   const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
@@ -457,12 +469,15 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
+      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, schedulesResponse, workResponse, resultsResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
         api.listSchools(),
         api.listClasses(),
         api.listUsers(),
         api.listAttendance(),
         api.listFees(),
+        api.listSchedules(),
+        api.listWork(),
+        api.listResults(),
         api.getDashboardReport(),
         api.listOrganizations(),
         api.listActivities(50),
@@ -476,9 +491,14 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setClassRows(mappedClasses);
       setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mapTeacherRows(users, schools));
+      const mappedTeachers = mapTeacherRows(users, schools);
+      setTeacherRows(mappedTeachers);
       setStudentRows(mappedStudents);
       setAttendanceRows(mapAttendanceRows(attendanceResponse.data.data, mappedStudents, schools, mappedClasses));
       setFeeRows(mapFeeRows(feesResponse.data.data, mappedStudents, schools, mappedClasses));
+      setScheduleRows(mapScheduleRows(schedulesResponse.data.data, mappedClasses, mappedTeachers));
+      setWorkRows(mapWorkRows(workResponse.data.data, mappedClasses, mappedTeachers));
+      setResultRows(mapResultRows(resultsResponse.data.data, mappedStudents, mappedClasses, mappedTeachers));
       setReport(reportResponse.data.data);
       const currentOrganization = organizationsResponse.data.data.find((item) => item.id === organizationId) || organizationsResponse.data.data[0] || null;
       setOrganization(currentOrganization);
@@ -508,6 +528,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setStudentRows([]);
       setAttendanceRows([]);
       setFeeRows([]);
+      setScheduleRows([]);
+      setWorkRows([]);
+      setResultRows([]);
       setReport(null);
       setOrganization(null);
       setActivityRows([]);
