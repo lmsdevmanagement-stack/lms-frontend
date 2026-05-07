@@ -21,6 +21,9 @@ import type {
   ScheduleCreateData,
   ScheduleResponse,
   ScheduleUpdateData,
+  SalaryCreateData,
+  SalaryResponse,
+  SalaryUpdateData,
   LoginCredentials,
   OrganizationCreateData,
   OrganizationResponse,
@@ -237,6 +240,23 @@ export const createFee = (data: FeeCreateData): Promise<AxiosResponse<ApiRespons
 
 export const updateFee = (feeId: number, data: FeeUpdateData): Promise<AxiosResponse<ApiResponse<FeeResponse>>> => {
   return api.patch(API_ENDPOINTS.fees.byId(feeId), data);
+};
+
+// Salaries API
+export const listSalaries = (params?: {
+  salary_month?: string;
+  school_id?: number;
+  status?: SalaryResponse['status'];
+}): Promise<AxiosResponse<ApiResponse<SalaryResponse[]>>> => {
+  return api.get(API_ENDPOINTS.salaries.base, { params });
+};
+
+export const createSalary = (data: SalaryCreateData): Promise<AxiosResponse<ApiResponse<SalaryResponse>>> => {
+  return api.post(API_ENDPOINTS.salaries.base, data);
+};
+
+export const updateSalary = (salaryId: number, data: SalaryUpdateData): Promise<AxiosResponse<ApiResponse<SalaryResponse>>> => {
+  return api.patch(API_ENDPOINTS.salaries.byId(salaryId), data);
 };
 
 // Reports API

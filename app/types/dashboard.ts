@@ -15,6 +15,7 @@ export type DashboardSection =
   | 'classes'
   | 'attendance'
   | 'fees'
+  | 'salaries'
   | 'schedule'
   | 'work'
   | 'results'
@@ -185,6 +186,20 @@ export interface ResultRow {
   totalMarks: number;
   examDate: string;
   remarks: string;
+}
+
+export interface SalaryRow {
+  id: number;
+  teacherId: number;
+  organizationId: number;
+  schoolId: number;
+  teacher: string;
+  school: string;
+  month: string;
+  amount: number;
+  status: 'paid' | 'unpaid';
+  paidAt: string;
+  notes: string;
 }
 
 export interface DataTableColumn<T> {

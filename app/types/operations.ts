@@ -141,3 +141,31 @@ export interface ResultCreateData {
 }
 
 export type ResultUpdateData = Partial<Omit<ResultCreateData, 'student_id'>>;
+
+export interface SalaryResponse {
+  id: number;
+  teacher_id: number;
+  organization_id: number;
+  school_id: number;
+  salary_month: string;
+  amount: number;
+  status: 'paid' | 'unpaid';
+  paid_at?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface SalaryCreateData {
+  teacher_id: number;
+  salary_month: string;
+  amount: number;
+  status: SalaryResponse['status'];
+  notes?: string | null;
+}
+
+export interface SalaryUpdateData {
+  salary_month?: string;
+  amount?: number;
+  status?: SalaryResponse['status'];
+  notes?: string | null;
+}

@@ -13,6 +13,7 @@ const validSections: DashboardSection[] = [
   'students',
   'attendance',
   'fees',
+  'salaries',
   'schedule',
   'work',
   'results',

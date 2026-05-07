@@ -14,6 +14,7 @@ export const DASHBOARD_NAV_ITEMS: NavigationItem[] = [
   { id: 'students', label: 'Students', icon: Users, roles: [USER_ROLES.admin] },
   { id: 'attendance', label: 'Attendance', icon: CalendarCheck, roles: [USER_ROLES.admin] },
   { id: 'fees', label: 'Fees', icon: Banknote, roles: [USER_ROLES.admin] },
+  { id: 'salaries', label: 'Salaries', icon: Banknote, roles: [USER_ROLES.admin] },
   { id: 'schedule', label: 'Schedule', icon: CalendarCheck, roles: [USER_ROLES.admin] },
   { id: 'work', label: 'Class Work', icon: Layers, roles: [USER_ROLES.admin] },
   { id: 'results', label: 'Results', icon: BarChart3, roles: [USER_ROLES.admin] },

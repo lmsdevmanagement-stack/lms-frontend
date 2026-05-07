@@ -13,6 +13,8 @@ import type {
   OrganizationResponse,
   ResultResponse,
   ResultRow,
+  SalaryResponse,
+  SalaryRow,
   ScheduleResponse,
   ScheduleRow,
   SchoolAdminRow,
@@ -45,6 +47,7 @@ export type FeeFormState = Pick<FeeRow, 'studentId' | 'month' | 'amount' | 'stat
 export type ScheduleFormState = Pick<ScheduleRow, 'classId' | 'teacherId' | 'subject' | 'weekday' | 'startTime' | 'endTime' | 'notes'>;
 export type WorkFormState = Pick<WorkRow, 'classId' | 'teacherId' | 'title' | 'description' | 'dueDate'>;
 export type ResultFormState = Pick<ResultRow, 'studentId' | 'teacherId' | 'examName' | 'subject' | 'marksObtained' | 'totalMarks' | 'examDate' | 'remarks'>;
+export type SalaryFormState = Pick<SalaryRow, 'teacherId' | 'month' | 'amount' | 'status' | 'notes'>;
 export type OrganizationSettingsFormState = {
   name: string;
   slug: string;
@@ -156,6 +159,14 @@ export const emptyResultForm: ResultFormState = {
   totalMarks: 100,
   examDate: '',
   remarks: '',
+};
+
+export const emptySalaryForm: SalaryFormState = {
+  teacherId: 0,
+  month: new Date().toISOString().slice(0, 7),
+  amount: 0,
+  status: 'unpaid',
+  notes: '',
 };
 
 export const emptyOrganizationSettingsForm: OrganizationSettingsFormState = {
@@ -343,6 +354,26 @@ function mapResultRows(records: ResultResponse[], students: StudentRow[], classe
   });
 }
 
+function mapSalaryRows(records: SalaryResponse[], teachers: TeacherRow[], schools: SchoolResponse[]): SalaryRow[] {
+  return records.map((record) => {
+    const teacher = teachers.find((item) => item.id === record.teacher_id);
+    const school = schools.find((item) => item.id === record.school_id);
+    return {
+      id: record.id,
+      teacherId: record.teacher_id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      teacher: teacher?.name || 'Unknown teacher',
+      school: school?.name || 'Unassigned',
+      month: record.salary_month,
+      amount: record.amount,
+      status: record.status,
+      paidAt: record.paid_at || '',
+      notes: record.notes || '',
+    };
+  });
+}
+
 function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): TeacherRow[] {
   return users
     .filter((user) => user.role === USER_ROLES.teacher)
@@ -426,6 +457,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [scheduleRows, setScheduleRows] = useState<ScheduleRow[]>([]);
   const [workRows, setWorkRows] = useState<WorkRow[]>([]);
   const [resultRows, setResultRows] = useState<ResultRow[]>([]);
+  const [salaryRows, setSalaryRows] = useState<SalaryRow[]>([]);
   const [activityRows, setActivityRows] = useState<ActivityResponse[]>([]);
   const [report, setReport] = useState<DashboardReport | null>(null);
   const [organization, setOrganization] = useState<OrganizationResponse | null>(null);
@@ -438,6 +470,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [workModalOpen, setWorkModalOpen] = useState(false);
   const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [salaryModalOpen, setSalaryModalOpen] = useState(false);
   const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
   const [editingClassId, setEditingClassId] = useState<number | null>(null);
@@ -448,6 +481,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null);
   const [editingWorkId, setEditingWorkId] = useState<number | null>(null);
   const [editingResultId, setEditingResultId] = useState<number | null>(null);
+  const [editingSalaryId, setEditingSalaryId] = useState<number | null>(null);
   const [editingSchoolAdminId, setEditingSchoolAdminId] = useState<number | null>(null);
   const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
   const [classForm, setClassForm] = useState<ClassFormState>(emptyClassForm);
@@ -458,6 +492,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(emptyScheduleForm);
   const [workForm, setWorkForm] = useState<WorkFormState>(emptyWorkForm);
   const [resultForm, setResultForm] = useState<ResultFormState>(emptyResultForm);
+  const [salaryForm, setSalaryForm] = useState<SalaryFormState>(emptySalaryForm);
   const [organizationSettingsForm, setOrganizationSettingsForm] = useState<OrganizationSettingsFormState>(emptyOrganizationSettingsForm);
   const [profileForm, setProfileForm] = useState<ProfileFormState>(emptyProfileForm);
   const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
@@ -470,12 +505,13 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, schedulesResponse, workResponse, resultsResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
+      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, salariesResponse, schedulesResponse, workResponse, resultsResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
         api.listSchools(),
         api.listClasses(),
         api.listUsers(),
         api.listAttendance(),
         api.listFees(),
+        api.listSalaries(),
         api.listSchedules(),
         api.listWork(),
         api.listResults(),
@@ -499,6 +535,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setScheduleRows(mapScheduleRows(schedulesResponse.data.data, mappedClasses, mappedTeachers));
       setWorkRows(mapWorkRows(workResponse.data.data, mappedClasses, mappedTeachers));
       setResultRows(mapResultRows(resultsResponse.data.data, mappedStudents, mappedClasses, mappedTeachers));
+      setSalaryRows(mapSalaryRows(salariesResponse.data.data, mappedTeachers, schools));
       setReport(reportResponse.data.data);
       const currentOrganization = organizationsResponse.data.data.find((item) => item.id === organizationId) || organizationsResponse.data.data[0] || null;
       setOrganization(currentOrganization);
@@ -531,6 +568,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setScheduleRows([]);
       setWorkRows([]);
       setResultRows([]);
+      setSalaryRows([]);
       setReport(null);
       setOrganization(null);
       setActivityRows([]);

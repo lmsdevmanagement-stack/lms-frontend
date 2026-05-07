@@ -32,6 +32,10 @@ export const API_ENDPOINTS = {
     base: '/fees',
     byId: (feeId: number) => `/fees/${feeId}`,
   },
+  salaries: {
+    base: '/salaries',
+    byId: (salaryId: number) => `/salaries/${salaryId}`,
+  },
   reports: {
     dashboard: '/reports/dashboard',
   },
