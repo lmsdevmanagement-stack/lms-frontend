@@ -489,9 +489,8 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       const mappedStudents = mapStudentRows(users, schools, mappedClasses);
       setSchoolRows(mapSchoolRows(schools, users));
       setClassRows(mappedClasses);
-      setSchoolAdminRows(mapSchoolAdminRows(users, schools));
-      setTeacherRows(mapTeacherRows(users, schools));
       const mappedTeachers = mapTeacherRows(users, schools);
+      setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mappedTeachers);
       setStudentRows(mappedStudents);
       setAttendanceRows(mapAttendanceRows(attendanceResponse.data.data, mappedStudents, schools, mappedClasses));
