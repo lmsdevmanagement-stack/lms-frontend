@@ -739,6 +739,10 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <Input value={crud.teacherForm.experience} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, experience: event.target.value })} />
           </label>
           <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Salary
+            <Input type="number" value={crud.teacherForm.salary} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, salary: Number(event.target.value) })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
             Joining Date
             <Input type="date" value={crud.teacherForm.joiningDate} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, joiningDate: event.target.value })} />
           </label>
