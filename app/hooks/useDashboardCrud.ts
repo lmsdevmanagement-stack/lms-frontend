@@ -275,6 +275,73 @@ function mapFeeRows(records: FeeResponse[], students: StudentRow[], schools: Sch
   });
 }
 
+function teacherName(teachers: TeacherRow[], teacherId?: number | null) {
+  if (!teacherId) return 'Unassigned';
+  return teachers.find((teacher) => teacher.id === teacherId)?.name || 'Unassigned';
+}
+
+function mapScheduleRows(records: ScheduleResponse[], classes: ClassRow[], teachers: TeacherRow[]): ScheduleRow[] {
+  return records.map((record) => {
+    const schoolClass = classes.find((item) => item.id === record.class_id);
+    return {
+      id: record.id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      classId: record.class_id,
+      teacherId: record.teacher_id || 0,
+      className: formatClassName(schoolClass),
+      teacher: teacherName(teachers, record.teacher_id),
+      subject: record.subject,
+      weekday: record.weekday,
+      startTime: record.start_time || '',
+      endTime: record.end_time || '',
+      notes: record.notes || '',
+    };
+  });
+}
+
+function mapWorkRows(records: WorkResponse[], classes: ClassRow[], teachers: TeacherRow[]): WorkRow[] {
+  return records.map((record) => {
+    const schoolClass = classes.find((item) => item.id === record.class_id);
+    return {
+      id: record.id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      classId: record.class_id,
+      teacherId: record.teacher_id || 0,
+      className: formatClassName(schoolClass),
+      teacher: teacherName(teachers, record.teacher_id),
+      title: record.title,
+      description: record.description || '',
+      dueDate: record.due_date || '',
+    };
+  });
+}
+
+function mapResultRows(records: ResultResponse[], students: StudentRow[], classes: ClassRow[], teachers: TeacherRow[]): ResultRow[] {
+  return records.map((record) => {
+    const student = students.find((item) => item.id === record.student_id);
+    const schoolClass = classes.find((item) => item.id === record.class_id);
+    return {
+      id: record.id,
+      studentId: record.student_id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      classId: record.class_id,
+      teacherId: record.teacher_id || 0,
+      student: student?.name || 'Unknown student',
+      className: formatClassName(schoolClass),
+      teacher: teacherName(teachers, record.teacher_id),
+      examName: record.exam_name,
+      subject: record.subject,
+      marksObtained: record.marks_obtained,
+      totalMarks: record.total_marks,
+      examDate: record.exam_date || '',
+      remarks: record.remarks || '',
+    };
+  });
+}
+
 function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): TeacherRow[] {
   return users
     .filter((user) => user.role === USER_ROLES.teacher)
@@ -292,6 +359,7 @@ function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): Teach
         cnic: teacher.cnic || '',
         address: teacher.address || '',
         experience: teacher.experience || '',
+        salary: teacher.salary || 0,
         joiningDate: teacher.joining_date || '',
         permissions: teacher.permissions || [],
         status: teacher.is_active ? 'active' : 'blocked',
