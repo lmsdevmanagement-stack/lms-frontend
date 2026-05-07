@@ -680,6 +680,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     return filterBySearch(scopedRows, searchTerm);
   }, [salaryRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
 
+  const scopedExpenses = useMemo(() => {
+    const orgRows = isSuperAdmin ? expenseRows : expenseRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [expenseRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
   const scopedSchedules = useMemo(() => {
     const orgRows = isSuperAdmin ? scheduleRows : scheduleRows.filter((row) => row.organizationId === organizationId);
     const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
