@@ -14,7 +14,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useDashboardAuth } from '../../hooks/useDashboardAuth';
 import { useDashboardCrud } from '../../hooks/useDashboardCrud';
 import { useMounted } from '../../hooks/useMounted';
-import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, FeeRow, ResultRow, ScheduleRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow, WorkRow } from '../../types';
+import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, FeeRow, ResultRow, SalaryRow, ScheduleRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow, WorkRow } from '../../types';
 
 interface DashboardViewProps {
   initialSection?: DashboardSection;
@@ -40,6 +40,9 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   const [attendanceSchoolFilter, setAttendanceSchoolFilter] = useState(0);
   const [feeMonthFilter, setFeeMonthFilter] = useState('');
   const [feeStatusFilter, setFeeStatusFilter] = useState<'all' | FeeRow['status']>('all');
+  const [feeClassFilter, setFeeClassFilter] = useState(0);
+  const [salaryMonthFilter, setSalaryMonthFilter] = useState('');
+  const [salaryStatusFilter, setSalaryStatusFilter] = useState<'all' | SalaryRow['status']>('all');
   const [deleteTarget, setDeleteTarget] = useState<
     | { type: 'school'; row: SchoolRow }
     | { type: 'class'; row: ClassRow }
@@ -257,9 +260,17 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
 
   const feeRows = crud.fees.filter((row) => {
     if (feeMonthFilter && row.month !== feeMonthFilter) return false;
+    if (feeClassFilter && row.classId !== feeClassFilter) return false;
     if (feeStatusFilter !== 'all' && row.status !== feeStatusFilter) return false;
     return true;
   });
+  const feePaidTotal = feeRows.filter((row) => row.status === 'paid').reduce((total, row) => total + row.amount, 0);
+  const feeUnpaidTotal = feeRows.filter((row) => row.status === 'unpaid').reduce((total, row) => total + row.amount, 0);
+  const feeSummaryStats: StatCard[] = [
+    { label: 'Collected', value: `Rs ${feePaidTotal.toLocaleString()}`, description: `${feeRows.filter((row) => row.status === 'paid').length} paid records` },
+    { label: 'Pending', value: `Rs ${feeUnpaidTotal.toLocaleString()}`, description: `${feeRows.filter((row) => row.status === 'unpaid').length} unpaid records` },
+    { label: 'Class Records', value: String(feeRows.length), description: feeClassFilter ? 'Filtered class fee rows' : 'All visible fee rows' },
+  ];
   const feeColumns: DataTableColumn<FeeRow>[] = [
     { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
     { key: 'month', header: 'Month', cell: (row) => row.month },
@@ -312,6 +323,40 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     { key: 'marks', header: 'Marks', cell: (row) => `${row.marksObtained}/${row.totalMarks}` },
     { key: 'examDate', header: 'Date', cell: (row) => row.examDate || 'No date' },
     { key: 'actions', header: 'Actions', cell: (row) => isStudent ? <span className="text-xs text-slate-500">Read only</span> : <Button variant="ghost" onClick={() => crud.openEditResultModal(row)}>Edit</Button>, className: 'text-right' },
+  ];
+
+  const salaryRows = crud.salaries.filter((row) => {
+    if (salaryMonthFilter && row.month !== salaryMonthFilter) return false;
+    if (salaryStatusFilter !== 'all' && row.status !== salaryStatusFilter) return false;
+    return true;
+  });
+  const salaryPaidTotal = salaryRows.filter((row) => row.status === 'paid').reduce((total, row) => total + row.amount, 0);
+  const salaryUnpaidTotal = salaryRows.filter((row) => row.status === 'unpaid').reduce((total, row) => total + row.amount, 0);
+  const salarySummaryStats: StatCard[] = [
+    { label: 'Salary Paid', value: `Rs ${salaryPaidTotal.toLocaleString()}`, description: `${salaryRows.filter((row) => row.status === 'paid').length} paid salary records` },
+    { label: 'Salary Pending', value: `Rs ${salaryUnpaidTotal.toLocaleString()}`, description: `${salaryRows.filter((row) => row.status === 'unpaid').length} unpaid salary records` },
+    { label: 'Teachers', value: String(new Set(salaryRows.map((row) => row.teacherId)).size), description: 'Teachers in filtered salary records' },
+  ];
+  const salaryColumns: DataTableColumn<SalaryRow>[] = [
+    { key: 'teacher', header: 'Teacher', cell: (row) => <span className="font-medium text-slate-950">{row.teacher}</span> },
+    { key: 'school', header: 'School', cell: (row) => row.school },
+    { key: 'month', header: 'Month', cell: (row) => row.month },
+    { key: 'amount', header: 'Amount', cell: (row) => `Rs ${row.amount.toLocaleString()}` },
+    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
+    { key: 'paidAt', header: 'Paid At', cell: (row) => row.paidAt ? new Date(row.paidAt).toLocaleDateString() : '-' },
+    {
+      key: 'actions',
+      header: 'Actions',
+      cell: (row) => (
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.updateSalaryStatus(row, row.status === 'paid' ? 'unpaid' : 'paid')}>
+            Mark {row.status === 'paid' ? 'Unpaid' : 'Paid'}
+          </Button>
+          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditSalaryModal(row)}>Edit</Button>
+        </div>
+      ),
+      className: 'text-right',
+    },
   ];
 
   const activityColumns: DataTableColumn<ActivityResponse>[] = [
@@ -411,9 +456,14 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     if (initialSection === 'fees') {
       return (
         <div className="space-y-4">
+          {!isStudent && <StatsGrid stats={feeSummaryStats} />}
           <Card>
-            <CardContent className="grid gap-3 p-4 md:grid-cols-2">
+            <CardContent className="grid gap-3 p-4 md:grid-cols-3">
               <Input type="month" value={feeMonthFilter} onChange={(event) => setFeeMonthFilter(event.target.value)} />
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={feeClassFilter} onChange={(event) => setFeeClassFilter(Number(event.target.value))}>
+                <option value={0}>All classes</option>
+                {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
+              </select>
               <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={feeStatusFilter} onChange={(event) => setFeeStatusFilter(event.target.value as 'all' | FeeRow['status'])}>
                 <option value="all">All statuses</option>
                 <option value="paid">Paid</option>
@@ -422,6 +472,24 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             </CardContent>
           </Card>
           <DataTable title="Fees" description={isStudent ? 'Your monthly fee breakdown and paid/unpaid status.' : 'Assign monthly fees, update payment status, and track student payments.'} columns={feeColumns} data={feeRows} loading={crud.loading} />
+        </div>
+      );
+    }
+    if (initialSection === 'salaries') {
+      return (
+        <div className="space-y-4">
+          <StatsGrid stats={salarySummaryStats} />
+          <Card>
+            <CardContent className="grid gap-3 p-4 md:grid-cols-2">
+              <Input type="month" value={salaryMonthFilter} onChange={(event) => setSalaryMonthFilter(event.target.value)} />
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={salaryStatusFilter} onChange={(event) => setSalaryStatusFilter(event.target.value as 'all' | SalaryRow['status'])}>
+                <option value="all">All statuses</option>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+              </select>
+            </CardContent>
+          </Card>
+          <DataTable title="Teacher Salaries" description="Assign salary records, update paid/unpaid status, and track salary totals." columns={salaryColumns} data={salaryRows} loading={crud.loading} />
         </div>
       );
     }

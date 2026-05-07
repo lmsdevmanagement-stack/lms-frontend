@@ -632,6 +632,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     return filterBySearch(scopedRows, searchTerm);
   }, [feeRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
 
+  const scopedSalaries = useMemo(() => {
+    const orgRows = isSuperAdmin ? salaryRows : salaryRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [salaryRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
   const scopedSchedules = useMemo(() => {
     const orgRows = isSuperAdmin ? scheduleRows : scheduleRows.filter((row) => row.organizationId === organizationId);
     const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
@@ -1189,6 +1195,65 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const openCreateSalaryModal = () => {
+    const defaultTeacher = scopedTeachers[0];
+    setEditingSalaryId(null);
+    setSalaryForm({
+      ...emptySalaryForm,
+      teacherId: defaultTeacher?.id || 0,
+      amount: defaultTeacher?.salary || 0,
+    });
+    setSalaryModalOpen(true);
+  };
+
+  const openEditSalaryModal = (salary: SalaryRow) => {
+    setEditingSalaryId(salary.id);
+    setSalaryForm({
+      teacherId: salary.teacherId,
+      month: salary.month,
+      amount: salary.amount,
+      status: salary.status,
+      notes: salary.notes,
+    });
+    setSalaryModalOpen(true);
+  };
+
+  const saveSalary = async () => {
+    setSaving(true);
+    try {
+      if (editingSalaryId) {
+        await api.updateSalary(editingSalaryId, {
+          salary_month: salaryForm.month,
+          amount: Number(salaryForm.amount),
+          status: salaryForm.status,
+          notes: salaryForm.notes || null,
+        });
+      } else {
+        await api.createSalary({
+          teacher_id: Number(salaryForm.teacherId),
+          salary_month: salaryForm.month,
+          amount: Number(salaryForm.amount),
+          status: salaryForm.status,
+          notes: salaryForm.notes || null,
+        });
+      }
+      setSalaryModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateSalaryStatus = async (salary: SalaryRow, status: SalaryRow['status']) => {
+    setSaving(true);
+    try {
+      await api.updateSalary(salary.id, { status });
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openCreateScheduleModal = () => {
     setEditingScheduleId(null);
     setScheduleForm({ ...emptyScheduleForm, classId: scopedClasses[0]?.id || 0, teacherId: scopedClasses[0]?.teacherId || 0 });
@@ -1365,6 +1430,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     students: scopedStudents,
     attendance: scopedAttendance,
     fees: scopedFees,
+    salaries: scopedSalaries,
     schedules: scopedSchedules,
     work: scopedWork,
     results: scopedResults,
@@ -1380,6 +1446,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     studentModalOpen,
     attendanceModalOpen,
     feeModalOpen,
+    salaryModalOpen,
     scheduleModalOpen,
     workModalOpen,
     resultModalOpen,
@@ -1390,6 +1457,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     editingStudentId,
     editingAttendanceId,
     editingFeeId,
+    editingSalaryId,
     editingScheduleId,
     editingWorkId,
     editingResultId,
@@ -1400,6 +1468,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     studentForm,
     attendanceForm,
     feeForm,
+    salaryForm,
     scheduleForm,
     workForm,
     resultForm,
@@ -1412,6 +1481,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setStudentForm,
     setAttendanceForm,
     setFeeForm,
+    setSalaryForm,
     setScheduleForm,
     setWorkForm,
     setResultForm,
@@ -1424,6 +1494,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setStudentModalOpen,
     setAttendanceModalOpen,
     setFeeModalOpen,
+    setSalaryModalOpen,
     setScheduleModalOpen,
     setWorkModalOpen,
     setResultModalOpen,
@@ -1465,6 +1536,10 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     openEditFeeModal,
     saveFee,
     updateFeeStatus,
+    openCreateSalaryModal,
+    openEditSalaryModal,
+    saveSalary,
+    updateSalaryStatus,
     openCreateScheduleModal,
     openEditScheduleModal,
     saveSchedule,
