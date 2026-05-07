@@ -21,7 +21,7 @@ import type {
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
 export type ClassFormState = Pick<ClassRow, 'name' | 'section' | 'description' | 'schoolId' | 'teacherId' | 'status'>;
-export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'status'> & {
+export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'fatherName' | 'cnic' | 'address' | 'experience' | 'joiningDate' | 'status'> & {
   password: string;
 };
 export type SchoolAdminFormState = {
@@ -31,7 +31,7 @@ export type SchoolAdminFormState = {
   schoolId: number;
   organizationId: number;
 };
-export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 'classId' | 'status'> & {
+export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 'classId' | 'registrationNumber' | 'fatherName' | 'bFormCnic' | 'rollNumber' | 'dateOfBirth' | 'address' | 'fatherCnic' | 'admissionDate' | 'status'> & {
   password: string;
 };
 export type AttendanceFormState = Pick<AttendanceRow, 'studentId' | 'date' | 'status' | 'notes'>;
@@ -61,6 +61,11 @@ export const emptyTeacherForm: TeacherFormState = {
   email: '',
   schoolId: 0,
   subject: '',
+  fatherName: '',
+  cnic: '',
+  address: '',
+  experience: '',
+  joiningDate: '',
   status: 'active',
   password: '',
 };
@@ -87,6 +92,14 @@ export const emptyStudentForm: StudentFormState = {
   email: '',
   schoolId: 0,
   classId: 0,
+  registrationNumber: '',
+  fatherName: '',
+  bFormCnic: '',
+  rollNumber: '',
+  dateOfBirth: '',
+  address: '',
+  fatherCnic: '',
+  admissionDate: '',
   status: 'active',
   password: '',
 };
@@ -236,7 +249,12 @@ function mapTeacherRows(users: UserResponse[], schools: SchoolResponse[]): Teach
         name: teacher.full_name,
         email: teacher.email,
         school: school?.name || 'Unassigned',
-        subject: 'General',
+        subject: teacher.subject_specialist || 'General',
+        fatherName: teacher.father_name || '',
+        cnic: teacher.cnic || '',
+        address: teacher.address || '',
+        experience: teacher.experience || '',
+        joiningDate: teacher.joining_date || '',
         permissions: teacher.permissions || [],
         status: teacher.is_active ? 'active' : 'blocked',
       };
@@ -274,6 +292,14 @@ function mapStudentRows(users: UserResponse[], schools: SchoolResponse[], classe
         classId: student.class_id || 0,
         name: student.full_name,
         email: student.email,
+        registrationNumber: student.registration_number || '',
+        fatherName: student.father_name || '',
+        bFormCnic: student.b_form_cnic || '',
+        rollNumber: student.roll_number || '',
+        dateOfBirth: student.date_of_birth || '',
+        address: student.address || '',
+        fatherCnic: student.father_cnic || '',
+        admissionDate: student.admission_date || '',
         school: school?.name || 'Unassigned',
         className: formatClassName(schoolClass),
         permissions: student.permissions || [],
@@ -667,6 +693,11 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       email: teacher.email,
       schoolId: teacher.schoolId,
       subject: teacher.subject,
+      fatherName: teacher.fatherName,
+      cnic: teacher.cnic,
+      address: teacher.address,
+      experience: teacher.experience,
+      joiningDate: teacher.joiningDate,
       status: teacher.status,
       password: '',
     });
@@ -681,6 +712,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
         await api.updateUser(editingTeacherId, {
           full_name: teacherForm.name,
           school_id: Number(teacherForm.schoolId),
+          father_name: teacherForm.fatherName || null,
+          cnic: teacherForm.cnic || null,
+          address: teacherForm.address || null,
+          experience: teacherForm.experience || null,
+          subject_specialist: teacherForm.subject || null,
+          joining_date: teacherForm.joiningDate || null,
           is_active: teacherForm.status !== 'blocked',
         });
       } else {
@@ -689,6 +726,12 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           full_name: teacherForm.name,
           password: teacherForm.password || 'Password123!',
           role: USER_ROLES.teacher,
+          father_name: teacherForm.fatherName || null,
+          cnic: teacherForm.cnic || null,
+          address: teacherForm.address || null,
+          experience: teacherForm.experience || null,
+          subject_specialist: teacherForm.subject || null,
+          joining_date: teacherForm.joiningDate || null,
           organization_id: selectedSchool?.organizationId || organizationId,
           school_id: Number(teacherForm.schoolId),
         });
@@ -748,6 +791,14 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       email: student.email,
       schoolId: student.schoolId,
       classId: student.classId,
+      registrationNumber: student.registrationNumber,
+      fatherName: student.fatherName,
+      bFormCnic: student.bFormCnic,
+      rollNumber: student.rollNumber,
+      dateOfBirth: student.dateOfBirth,
+      address: student.address,
+      fatherCnic: student.fatherCnic,
+      admissionDate: student.admissionDate,
       status: student.status,
       password: '',
     });
@@ -763,6 +814,14 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           full_name: studentForm.name,
           school_id: Number(studentForm.schoolId),
           class_id: Number(studentForm.classId) || null,
+          registration_number: studentForm.registrationNumber || null,
+          father_name: studentForm.fatherName || null,
+          b_form_cnic: studentForm.bFormCnic || null,
+          roll_number: studentForm.rollNumber || null,
+          date_of_birth: studentForm.dateOfBirth || null,
+          address: studentForm.address || null,
+          father_cnic: studentForm.fatherCnic || null,
+          admission_date: studentForm.admissionDate || null,
           is_active: studentForm.status !== 'blocked',
         });
       } else {
@@ -771,6 +830,14 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           full_name: studentForm.name,
           password: studentForm.password || 'Password123!',
           role: USER_ROLES.student,
+          registration_number: studentForm.registrationNumber || null,
+          father_name: studentForm.fatherName || null,
+          b_form_cnic: studentForm.bFormCnic || null,
+          roll_number: studentForm.rollNumber || null,
+          date_of_birth: studentForm.dateOfBirth || null,
+          address: studentForm.address || null,
+          father_cnic: studentForm.fatherCnic || null,
+          admission_date: studentForm.admissionDate || null,
           organization_id: selectedSchool?.organizationId || organizationId,
           school_id: Number(studentForm.schoolId),
           class_id: Number(studentForm.classId) || null,

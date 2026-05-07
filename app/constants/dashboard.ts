@@ -3,7 +3,7 @@ import { USER_ROLES } from './roles';
 import type { NavigationItem } from '../types';
 
 export const DASHBOARD_NAV_ITEMS: NavigationItem[] = [
-  { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, roles: [USER_ROLES.superAdmin, USER_ROLES.admin] },
+  { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, roles: [USER_ROLES.superAdmin, USER_ROLES.admin, USER_ROLES.teacher, USER_ROLES.student] },
   { id: 'schools', label: 'Schools', icon: Building2, roles: [USER_ROLES.superAdmin] },
   { id: 'school-admins', label: 'School Admins', icon: UserCog, roles: [USER_ROLES.superAdmin] },
   { id: 'activities', label: 'Activities', icon: Activity, roles: [USER_ROLES.superAdmin] },
@@ -24,4 +24,9 @@ export const DASHBOARD_NAV_ITEMS: NavigationItem[] = [
   { id: 'attendance', label: 'Attendance', icon: CalendarCheck, roles: [USER_ROLES.teacher] },
   { id: 'reports', label: 'Reports', icon: BarChart3, roles: [USER_ROLES.teacher] },
   { id: 'profile', label: 'Profile', icon: Settings, roles: [USER_ROLES.teacher] },
+  { id: 'classes', label: 'Class Info', icon: Layers, roles: [USER_ROLES.student] },
+  { id: 'attendance', label: 'Attendance', icon: CalendarCheck, roles: [USER_ROLES.student] },
+  { id: 'fees', label: 'Fees', icon: Banknote, roles: [USER_ROLES.student] },
+  { id: 'reports', label: 'Reports', icon: BarChart3, roles: [USER_ROLES.student] },
+  { id: 'profile', label: 'Profile', icon: Settings, roles: [USER_ROLES.student] },
 ];

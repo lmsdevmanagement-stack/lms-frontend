@@ -53,6 +53,11 @@ export interface TeacherRow {
   email: string;
   school: string;
   subject: string;
+  fatherName: string;
+  cnic: string;
+  address: string;
+  experience: string;
+  joiningDate: string;
   permissions: string[];
   status: 'active' | 'blocked';
 }
@@ -76,6 +81,14 @@ export interface SchoolAdminRow {
   schoolId: number;
   name: string;
   email: string;
+  registrationNumber: string;
+  fatherName: string;
+  bFormCnic: string;
+  rollNumber: string;
+  dateOfBirth: string;
+  address: string;
+  fatherCnic: string;
+  admissionDate: string;
   school: string;
   permissions: string[];
   status: 'active' | 'blocked';

@@ -56,6 +56,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   >(null);
   const { user, role, isAuthenticated, isSuperAdmin, organizationId, schoolId, handleLogout } = useDashboardAuth();
   const isTeacher = role === 'teacher';
+  const isStudent = role === 'student';
   const isAdminUser = isSuperAdmin || role === 'admin';
   const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated, currentUser: user });
   const stats: StatCard[] = isSuperAdmin ? [
@@ -72,6 +73,11 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     { label: 'Assigned Students', value: String(crud.students.length), description: 'Students in your classes' },
     { label: 'Attendance Records', value: String(crud.attendance.length), description: 'Recorded classroom attendance' },
     { label: 'Present', value: String(crud.attendance.filter((row) => row.status === 'present').length), description: 'Present attendance entries' },
+  ] : isStudent ? [
+    { label: 'Attendance', value: `${crud.attendance.filter((row) => row.status === 'present').length}/${crud.attendance.length}`, description: 'Present over recorded attendance' },
+    { label: 'Paid Fees', value: String(crud.fees.filter((row) => row.status === 'paid').length), description: 'Paid monthly fee records' },
+    { label: 'Unpaid Fees', value: String(crud.fees.filter((row) => row.status === 'unpaid').length), description: 'Pending monthly fee records' },
+    { label: 'Class', value: crud.classes[0]?.name || 'Unassigned', description: crud.classes[0]?.section || 'Class assignment' },
   ] : [
     { label: 'Teachers', value: String(crud.teachers.length), description: 'Your school teachers' },
     { label: 'Students', value: String(crud.students.length), description: 'Your school students' },
@@ -117,6 +123,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     },
     { key: 'school', header: 'School', cell: (row) => row.school },
     { key: 'subject', header: 'Subject', cell: (row) => row.subject },
+    { key: 'experience', header: 'Experience', cell: (row) => row.experience || 'Not set' },
     { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
     {
       key: 'actions',
@@ -146,7 +153,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
-          {!isTeacher && (
+          {!isTeacher && !isStudent && (
             <>
           <Button variant="ghost" onClick={() => crud.openEditClassModal(row)}>Edit</Button>
           <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleClassBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
@@ -200,13 +207,15 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     },
     { key: 'school', header: 'School', cell: (row) => row.school },
     { key: 'className', header: 'Class', cell: (row) => row.className },
+    { key: 'rollNumber', header: 'Roll No.', cell: (row) => row.rollNumber || 'Not set' },
+    { key: 'fatherName', header: 'Father', cell: (row) => row.fatherName || 'Not set' },
     { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
     {
       key: 'actions',
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
-          {!isTeacher && (
+          {!isTeacher && !isStudent && (
             <>
           <Button variant="ghost" onClick={() => setPermissionTarget({ type: 'student', row, name: row.name, school: row.school, email: row.email, permissions: row.permissions })}>Permissions</Button>
           <Button variant="ghost">Password</Button>
