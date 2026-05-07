@@ -493,6 +493,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [workRows, setWorkRows] = useState<WorkRow[]>([]);
   const [resultRows, setResultRows] = useState<ResultRow[]>([]);
   const [salaryRows, setSalaryRows] = useState<SalaryRow[]>([]);
+  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
   const [activityRows, setActivityRows] = useState<ActivityResponse[]>([]);
   const [report, setReport] = useState<DashboardReport | null>(null);
   const [organization, setOrganization] = useState<OrganizationResponse | null>(null);
@@ -506,6 +507,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [workModalOpen, setWorkModalOpen] = useState(false);
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [salaryModalOpen, setSalaryModalOpen] = useState(false);
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [schoolAdminModalOpen, setSchoolAdminModalOpen] = useState(false);
   const [editingSchoolId, setEditingSchoolId] = useState<number | null>(null);
   const [editingClassId, setEditingClassId] = useState<number | null>(null);
@@ -517,6 +519,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [editingWorkId, setEditingWorkId] = useState<number | null>(null);
   const [editingResultId, setEditingResultId] = useState<number | null>(null);
   const [editingSalaryId, setEditingSalaryId] = useState<number | null>(null);
+  const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const [editingSchoolAdminId, setEditingSchoolAdminId] = useState<number | null>(null);
   const [schoolForm, setSchoolForm] = useState<SchoolFormState>(emptySchoolForm);
   const [classForm, setClassForm] = useState<ClassFormState>(emptyClassForm);
@@ -528,6 +531,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   const [workForm, setWorkForm] = useState<WorkFormState>(emptyWorkForm);
   const [resultForm, setResultForm] = useState<ResultFormState>(emptyResultForm);
   const [salaryForm, setSalaryForm] = useState<SalaryFormState>(emptySalaryForm);
+  const [expenseForm, setExpenseForm] = useState<ExpenseFormState>(emptyExpenseForm);
   const [organizationSettingsForm, setOrganizationSettingsForm] = useState<OrganizationSettingsFormState>(emptyOrganizationSettingsForm);
   const [profileForm, setProfileForm] = useState<ProfileFormState>(emptyProfileForm);
   const [schoolAdminForm, setSchoolAdminForm] = useState<SchoolAdminFormState>(emptySchoolAdminForm);
