@@ -425,6 +425,15 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </div>
       );
     }
+    if (initialSection === 'schedule') {
+      return <DataTable title="Class Schedule" description={isStudent ? 'Your class schedule.' : 'Manage class-wise schedules.'} columns={scheduleColumns} data={crud.schedules} loading={crud.loading} />;
+    }
+    if (initialSection === 'work') {
+      return <DataTable title="Class Work" description={isStudent ? 'Your assigned class work.' : 'Manage class work for assigned classes.'} columns={workColumns} data={crud.work} loading={crud.loading} />;
+    }
+    if (initialSection === 'results') {
+      return <DataTable title="Marks & Results" description={isStudent ? 'Your marks and test history.' : 'Add and update student marks.'} columns={resultColumns} data={crud.results} loading={crud.loading} />;
+    }
     if (initialSection === 'reports') {
       const reportStats: StatCard[] = [
         { label: isStudent ? 'Student' : 'Total Students', value: isStudent ? (user?.full_name || 'Student') : String(crud.report?.total_students || 0), description: isStudent ? 'Academic overview' : 'Active student accounts' },
