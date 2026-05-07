@@ -1302,6 +1302,54 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const openCreateExpenseModal = () => {
+    setEditingExpenseId(null);
+    setExpenseForm({
+      ...emptyExpenseForm,
+      schoolId: scopedSchools[0]?.id || 0,
+    });
+    setExpenseModalOpen(true);
+  };
+
+  const openEditExpenseModal = (expense: ExpenseRow) => {
+    setEditingExpenseId(expense.id);
+    setExpenseForm({
+      schoolId: expense.schoolId,
+      title: expense.title,
+      category: expense.category,
+      date: expense.date,
+      period: expense.period,
+      amount: expense.amount,
+      vendor: expense.vendor,
+      paymentMethod: expense.paymentMethod,
+      notes: expense.notes,
+    });
+    setExpenseModalOpen(true);
+  };
+
+  const saveExpense = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        school_id: Number(expenseForm.schoolId) || null,
+        title: expenseForm.title,
+        category: expenseForm.category,
+        expense_date: expenseForm.date,
+        period: expenseForm.period,
+        amount: Number(expenseForm.amount),
+        vendor: expenseForm.vendor || null,
+        payment_method: expenseForm.paymentMethod || null,
+        notes: expenseForm.notes || null,
+      };
+      if (editingExpenseId) await api.updateExpense(editingExpenseId, payload);
+      else await api.createExpense(payload);
+      setExpenseModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openCreateScheduleModal = () => {
     setEditingScheduleId(null);
     setScheduleForm({ ...emptyScheduleForm, classId: scopedClasses[0]?.id || 0, teacherId: scopedClasses[0]?.teacherId || 0 });
@@ -1479,6 +1527,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     attendance: scopedAttendance,
     fees: scopedFees,
     salaries: scopedSalaries,
+    expenses: scopedExpenses,
     schedules: scopedSchedules,
     work: scopedWork,
     results: scopedResults,
@@ -1495,6 +1544,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     attendanceModalOpen,
     feeModalOpen,
     salaryModalOpen,
+    expenseModalOpen,
     scheduleModalOpen,
     workModalOpen,
     resultModalOpen,
@@ -1506,6 +1556,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     editingAttendanceId,
     editingFeeId,
     editingSalaryId,
+    editingExpenseId,
     editingScheduleId,
     editingWorkId,
     editingResultId,
@@ -1517,6 +1568,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     attendanceForm,
     feeForm,
     salaryForm,
+    expenseForm,
     scheduleForm,
     workForm,
     resultForm,
@@ -1530,6 +1582,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setAttendanceForm,
     setFeeForm,
     setSalaryForm,
+    setExpenseForm,
     setScheduleForm,
     setWorkForm,
     setResultForm,
@@ -1543,6 +1596,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setAttendanceModalOpen,
     setFeeModalOpen,
     setSalaryModalOpen,
+    setExpenseModalOpen,
     setScheduleModalOpen,
     setWorkModalOpen,
     setResultModalOpen,
@@ -1588,6 +1642,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     openEditSalaryModal,
     saveSalary,
     updateSalaryStatus,
+    openCreateExpenseModal,
+    openEditExpenseModal,
+    saveExpense,
     openCreateScheduleModal,
     openEditScheduleModal,
     saveSchedule,

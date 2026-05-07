@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from './DashboardLayout';
 import DataTable from './DataTable';
 import PermissionsMatrix from './PermissionsMatrix';
@@ -14,7 +14,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useDashboardAuth } from '../../hooks/useDashboardAuth';
 import { useDashboardCrud } from '../../hooks/useDashboardCrud';
 import { useMounted } from '../../hooks/useMounted';
-import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, FeeRow, ResultRow, SalaryRow, ScheduleRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow, WorkRow } from '../../types';
+import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, ExpenseRow, FeeRow, ResultRow, SalaryRow, ScheduleRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow, WorkRow } from '../../types';
 
 interface DashboardViewProps {
   initialSection?: DashboardSection;
@@ -34,6 +34,7 @@ const statusVariant = {
 
 export default function DashboardView({ initialSection = 'overview' }: DashboardViewProps) {
   const mounted = useMounted();
+  const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   const [searchTerm, setSearchTerm] = useState('');
   const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
   const [attendanceClassFilter, setAttendanceClassFilter] = useState(0);
@@ -43,6 +44,9 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   const [feeClassFilter, setFeeClassFilter] = useState(0);
   const [salaryMonthFilter, setSalaryMonthFilter] = useState('');
   const [salaryStatusFilter, setSalaryStatusFilter] = useState<'all' | SalaryRow['status']>('all');
+  const [expenseDateFilter, setExpenseDateFilter] = useState('');
+  const [expensePeriodFilter, setExpensePeriodFilter] = useState<'all' | ExpenseRow['period']>('all');
+  const [expenseSchoolFilter, setExpenseSchoolFilter] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<
     | { type: 'school'; row: SchoolRow }
     | { type: 'class'; row: ClassRow }
@@ -62,6 +66,10 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   const isStudent = role === 'student';
   const isAdminUser = isSuperAdmin || role === 'admin';
   const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated, currentUser: user });
+
+  useEffect(() => {
+    setActiveSection(initialSection);
+  }, [initialSection]);
   const stats: StatCard[] = isSuperAdmin ? [
     { label: 'Schools', value: String(crud.schools.length), description: 'All managed schools' },
     { label: 'School Admins', value: String(crud.schoolAdmins.length), description: 'Admins assigned to schools' },
@@ -398,16 +406,16 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   if (!isAuthenticated) return null;
 
   const renderSection = () => {
-    if (initialSection === 'schools') {
+    if (activeSection === 'schools') {
       return <DataTable title="Organizations / Schools" description="Create, edit, block, and delete schools." columns={schoolColumns} data={crud.schools} loading={crud.loading} />;
     }
-    if (initialSection === 'school-admins') {
+    if (activeSection === 'school-admins') {
       return <DataTable title="School Admins" description="Create, edit, block, and delete school-scoped admins." columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />;
     }
-    if (initialSection === 'activities') {
+    if (activeSection === 'activities') {
       return <DataTable title="User Activities" description="Track login, school, admin, teacher, and student changes across the platform." columns={activityColumns} data={crud.activities} loading={crud.loading} />;
     }
-    if (initialSection === 'expenses') {
+    if (activeSection === 'expenses') {
       return (
         <Card>
           <CardHeader>
@@ -421,19 +429,19 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </Card>
       );
     }
-    if (initialSection === 'admin-permissions') {
+    if (activeSection === 'admin-permissions') {
       return <PermissionsMatrix section="admin-permissions" />;
     }
-    if (initialSection === 'teachers') {
+    if (activeSection === 'teachers') {
       return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
     }
-    if (initialSection === 'classes') {
+    if (activeSection === 'classes') {
       return <DataTable title={isStudent ? 'Class & Subject Info' : 'Classes'} description={isStudent ? 'Your class details and assigned teacher.' : 'Create, edit, block, and assign student classes.'} columns={classColumns} data={crud.classes} loading={crud.loading} />;
     }
-    if (initialSection === 'students') {
+    if (activeSection === 'students') {
       return <DataTable title="Students" description="Create, edit, delete, block, and reset student access." columns={studentColumns} data={crud.students} loading={crud.loading} />;
     }
-    if (initialSection === 'attendance') {
+    if (activeSection === 'attendance') {
       return (
         <div className="space-y-4">
           <Card>
@@ -453,7 +461,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </div>
       );
     }
-    if (initialSection === 'fees') {
+    if (activeSection === 'fees') {
       return (
         <div className="space-y-4">
           {!isStudent && <StatsGrid stats={feeSummaryStats} />}
@@ -475,7 +483,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </div>
       );
     }
-    if (initialSection === 'salaries') {
+    if (activeSection === 'salaries') {
       return (
         <div className="space-y-4">
           <StatsGrid stats={salarySummaryStats} />
@@ -493,16 +501,16 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </div>
       );
     }
-    if (initialSection === 'schedule') {
+    if (activeSection === 'schedule') {
       return <DataTable title="Class Schedule" description={isStudent ? 'Your class schedule.' : 'Manage class-wise schedules.'} columns={scheduleColumns} data={crud.schedules} loading={crud.loading} />;
     }
-    if (initialSection === 'work') {
+    if (activeSection === 'work') {
       return <DataTable title="Class Work" description={isStudent ? 'Your assigned class work.' : 'Manage class work for assigned classes.'} columns={workColumns} data={crud.work} loading={crud.loading} />;
     }
-    if (initialSection === 'results') {
+    if (activeSection === 'results') {
       return <DataTable title="Marks & Results" description={isStudent ? 'Your marks and test history.' : 'Add and update student marks.'} columns={resultColumns} data={crud.results} loading={crud.loading} />;
     }
-    if (initialSection === 'reports') {
+    if (activeSection === 'reports') {
       const reportStats: StatCard[] = [
         { label: isStudent ? 'Student' : 'Total Students', value: isStudent ? (user?.full_name || 'Student') : String(crud.report?.total_students || 0), description: isStudent ? 'Academic overview' : 'Active student accounts' },
         { label: 'Teachers', value: String(crud.report?.total_teachers || 0), description: isStudent ? 'Assigned academic support' : 'Active teacher accounts' },
@@ -511,7 +519,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       ];
       return <StatsGrid stats={reportStats} />;
     }
-    if (initialSection === 'organization-settings') {
+    if (activeSection === 'organization-settings') {
       return (
         <Card>
           <CardHeader>
@@ -530,7 +538,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </Card>
       );
     }
-    if (initialSection === 'profile') {
+    if (activeSection === 'profile') {
       return (
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
@@ -560,7 +568,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </div>
       );
     }
-    if (initialSection === 'access-control') {
+    if (activeSection === 'access-control') {
       return (
         <div className="space-y-6">
           <DataTable title="Teacher Access" description="Assign permissions for attendance, fees, reports, and other modules." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
@@ -568,8 +576,8 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </div>
       );
     }
-    if (initialSection === 'teacher-permissions' || initialSection === 'student-permissions') {
-      return <PermissionsMatrix section={initialSection} />;
+    if (activeSection === 'teacher-permissions' || activeSection === 'student-permissions') {
+      return <PermissionsMatrix section={activeSection} />;
     }
 
     return (
@@ -632,7 +640,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     <DashboardLayout
       user={user}
       role={role}
-      activeSection={initialSection}
+      activeSection={activeSection}
       searchTerm={searchTerm}
       onSectionChange={() => undefined}
       onSearchChange={setSearchTerm}
@@ -647,37 +655,37 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             {isSuperAdmin ? 'Super Admin Dashboard' : isTeacher ? 'Teacher Dashboard' : isStudent ? 'Student Dashboard' : 'School Admin Dashboard'}
           </h1>
         </div>
-        {initialSection === 'schools' && (
+        {activeSection === 'schools' && (
           <Button disabled={crud.loading || crud.saving} onClick={crud.openCreateSchoolModal}>Create School</Button>
         )}
-        {initialSection === 'school-admins' && (
+        {activeSection === 'school-admins' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={() => crud.openCreateSchoolAdminModal()}>Create School Admin</Button>
         )}
-        {isAdminUser && initialSection === 'teachers' && (
+        {isAdminUser && activeSection === 'teachers' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateTeacherModal}>Create Teacher</Button>
         )}
-        {isAdminUser && initialSection === 'classes' && (
+        {isAdminUser && activeSection === 'classes' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateClassModal}>Create Class</Button>
         )}
-        {isAdminUser && initialSection === 'students' && (
+        {isAdminUser && activeSection === 'students' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0 || crud.classes.length === 0} onClick={crud.openCreateStudentModal}>Create Student</Button>
         )}
-        {!isStudent && initialSection === 'attendance' && (
+        {!isStudent && activeSection === 'attendance' && (
           <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateAttendanceModal}>Mark Attendance</Button>
         )}
-        {isAdminUser && initialSection === 'fees' && (
+        {isAdminUser && activeSection === 'fees' && (
           <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateFeeModal}>Assign Fee</Button>
         )}
-        {isAdminUser && initialSection === 'salaries' && (
+        {isAdminUser && activeSection === 'salaries' && (
           <Button disabled={crud.loading || crud.saving || crud.teachers.length === 0} onClick={crud.openCreateSalaryModal}>Assign Salary</Button>
         )}
-        {!isStudent && initialSection === 'schedule' && (
+        {!isStudent && activeSection === 'schedule' && (
           <Button disabled={crud.loading || crud.saving || crud.classes.length === 0} onClick={crud.openCreateScheduleModal}>Add Schedule</Button>
         )}
-        {!isStudent && initialSection === 'work' && (
+        {!isStudent && activeSection === 'work' && (
           <Button disabled={crud.loading || crud.saving || crud.classes.length === 0} onClick={crud.openCreateWorkModal}>Add Work</Button>
         )}
-        {!isStudent && initialSection === 'results' && (
+        {!isStudent && activeSection === 'results' && (
           <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateResultModal}>Add Result</Button>
         )}
       </div>
@@ -1268,3 +1276,4 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     </DashboardLayout>
   );
 }
+
