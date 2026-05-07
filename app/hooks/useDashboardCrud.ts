@@ -27,7 +27,7 @@ import type {
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
 export type ClassFormState = Pick<ClassRow, 'name' | 'section' | 'description' | 'schoolId' | 'teacherId' | 'status'>;
-export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'fatherName' | 'cnic' | 'address' | 'experience' | 'joiningDate' | 'status'> & {
+export type TeacherFormState = Pick<TeacherRow, 'name' | 'email' | 'schoolId' | 'subject' | 'fatherName' | 'cnic' | 'address' | 'experience' | 'salary' | 'joiningDate' | 'status'> & {
   password: string;
 };
 export type SchoolAdminFormState = {
@@ -74,6 +74,7 @@ export const emptyTeacherForm: TeacherFormState = {
   cnic: '',
   address: '',
   experience: '',
+  salary: 0,
   joiningDate: '',
   status: 'active',
   password: '',
@@ -843,6 +844,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       cnic: teacher.cnic,
       address: teacher.address,
       experience: teacher.experience,
+      salary: teacher.salary,
       joiningDate: teacher.joiningDate,
       status: teacher.status,
       password: '',

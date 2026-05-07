@@ -1004,6 +1004,88 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         </div>
       </Modal>
 
+      <Modal open={crud.scheduleModalOpen} title={crud.editingScheduleId ? 'Edit Schedule' : 'Add Schedule'} description="Manage class schedule." onClose={() => crud.setScheduleModalOpen(false)}>
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Class
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.scheduleForm.classId} onChange={(event) => {
+              const classId = Number(event.target.value);
+              const schoolClass = crud.classes.find((item) => item.id === classId);
+              crud.setScheduleForm({ ...crud.scheduleForm, classId, teacherId: schoolClass?.teacherId || 0 });
+            }}>
+              <option value={0}>Select class</option>
+              {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Subject
+            <Input value={crud.scheduleForm.subject} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, subject: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Day
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.scheduleForm.weekday} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, weekday: event.target.value })}>
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => <option key={day} value={day}>{day}</option>)}
+            </select>
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium text-slate-700">Start Time<Input type="time" value={crud.scheduleForm.startTime} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, startTime: event.target.value })} /></label>
+            <label className="grid gap-2 text-sm font-medium text-slate-700">End Time<Input type="time" value={crud.scheduleForm.endTime} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, endTime: event.target.value })} /></label>
+          </div>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Notes<Input value={crud.scheduleForm.notes} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, notes: event.target.value })} /></label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setScheduleModalOpen(false)}>Cancel</Button>
+            <Button disabled={crud.saving || !crud.scheduleForm.classId || !crud.scheduleForm.subject} onClick={crud.saveSchedule}>{crud.saving ? 'Saving...' : 'Save Schedule'}</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={crud.workModalOpen} title={crud.editingWorkId ? 'Edit Class Work' : 'Add Class Work'} description="Manage class work." onClose={() => crud.setWorkModalOpen(false)}>
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Class
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.workForm.classId} onChange={(event) => {
+              const classId = Number(event.target.value);
+              const schoolClass = crud.classes.find((item) => item.id === classId);
+              crud.setWorkForm({ ...crud.workForm, classId, teacherId: schoolClass?.teacherId || 0 });
+            }}>
+              <option value={0}>Select class</option>
+              {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Title<Input value={crud.workForm.title} onChange={(event) => crud.setWorkForm({ ...crud.workForm, title: event.target.value })} /></label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Due Date<Input type="date" value={crud.workForm.dueDate} onChange={(event) => crud.setWorkForm({ ...crud.workForm, dueDate: event.target.value })} /></label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Details<Input value={crud.workForm.description} onChange={(event) => crud.setWorkForm({ ...crud.workForm, description: event.target.value })} /></label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setWorkModalOpen(false)}>Cancel</Button>
+            <Button disabled={crud.saving || !crud.workForm.classId || !crud.workForm.title} onClick={crud.saveWork}>{crud.saving ? 'Saving...' : 'Save Work'}</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={crud.resultModalOpen} title={crud.editingResultId ? 'Edit Result' : 'Add Result'} description="Manage marks and tests." onClose={() => crud.setResultModalOpen(false)}>
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Student
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.resultForm.studentId} disabled={Boolean(crud.editingResultId)} onChange={(event) => {
+              const studentId = Number(event.target.value);
+              const student = crud.students.find((item) => item.id === studentId);
+              const schoolClass = student ? crud.classes.find((item) => item.id === student.classId) : undefined;
+              crud.setResultForm({ ...crud.resultForm, studentId, teacherId: schoolClass?.teacherId || 0 });
+            }}>
+              <option value={0}>Select student</option>
+              {crud.students.map((student) => <option key={student.id} value={student.id}>{student.name} - {student.className}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Exam Name<Input value={crud.resultForm.examName} onChange={(event) => crud.setResultForm({ ...crud.resultForm, examName: event.target.value })} /></label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Subject<Input value={crud.resultForm.subject} onChange={(event) => crud.setResultForm({ ...crud.resultForm, subject: event.target.value })} /></label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium text-slate-700">Marks<Input type="number" value={crud.resultForm.marksObtained} onChange={(event) => crud.setResultForm({ ...crud.resultForm, marksObtained: Number(event.target.value) })} /></label>
+            <label className="grid gap-2 text-sm font-medium text-slate-700">Total<Input type="number" value={crud.resultForm.totalMarks} onChange={(event) => crud.setResultForm({ ...crud.resultForm, totalMarks: Number(event.target.value) })} /></label>
+          </div>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Exam Date<Input type="date" value={crud.resultForm.examDate} onChange={(event) => crud.setResultForm({ ...crud.resultForm, examDate: event.target.value })} /></label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">Remarks<Input value={crud.resultForm.remarks} onChange={(event) => crud.setResultForm({ ...crud.resultForm, remarks: event.target.value })} /></label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setResultModalOpen(false)}>Cancel</Button>
+            <Button disabled={crud.saving || !crud.resultForm.studentId || !crud.resultForm.examName || !crud.resultForm.subject} onClick={crud.saveResult}>{crud.saving ? 'Saving...' : 'Save Result'}</Button>
+          </div>
+        </div>
+      </Modal>
+
       <Modal
         open={permissionTarget !== null}
         title={permissionModalTitle}
