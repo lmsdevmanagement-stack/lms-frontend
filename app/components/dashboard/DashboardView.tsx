@@ -600,6 +600,15 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         {isAdminUser && initialSection === 'fees' && (
           <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateFeeModal}>Assign Fee</Button>
         )}
+        {!isStudent && initialSection === 'schedule' && (
+          <Button disabled={crud.loading || crud.saving || crud.classes.length === 0} onClick={crud.openCreateScheduleModal}>Add Schedule</Button>
+        )}
+        {!isStudent && initialSection === 'work' && (
+          <Button disabled={crud.loading || crud.saving || crud.classes.length === 0} onClick={crud.openCreateWorkModal}>Add Work</Button>
+        )}
+        {!isStudent && initialSection === 'results' && (
+          <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateResultModal}>Add Result</Button>
+        )}
       </div>
 
       {renderSection()}
