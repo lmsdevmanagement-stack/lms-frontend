@@ -246,7 +246,9 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     {
       key: 'actions',
       header: 'Actions',
-      cell: (row) => <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditAttendanceModal(row)}>Override</Button>,
+      cell: (row) => isStudent
+        ? <span className="text-xs text-slate-500">Read only</span>
+        : <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditAttendanceModal(row)}>Override</Button>,
       className: 'text-right',
     },
   ];
@@ -267,10 +269,16 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       header: 'Actions',
       cell: (row) => (
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.updateFeeStatus(row, row.status === 'paid' ? 'unpaid' : 'paid')}>
-            Mark {row.status === 'paid' ? 'Unpaid' : 'Paid'}
-          </Button>
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditFeeModal(row)}>Edit</Button>
+          {isStudent ? (
+            <span className="text-xs text-slate-500">Read only</span>
+          ) : (
+            <>
+              <Button variant="ghost" disabled={crud.saving} onClick={() => crud.updateFeeStatus(row, row.status === 'paid' ? 'unpaid' : 'paid')}>
+                Mark {row.status === 'paid' ? 'Unpaid' : 'Paid'}
+              </Button>
+              <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditFeeModal(row)}>Edit</Button>
+            </>
+          )}
         </div>
       ),
       className: 'text-right',
@@ -346,7 +354,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
     }
     if (initialSection === 'classes') {
-      return <DataTable title="Classes" description="Create, edit, block, and assign student classes." columns={classColumns} data={crud.classes} loading={crud.loading} />;
+      return <DataTable title={isStudent ? 'Class & Subject Info' : 'Classes'} description={isStudent ? 'Your class details and assigned teacher.' : 'Create, edit, block, and assign student classes.'} columns={classColumns} data={crud.classes} loading={crud.loading} />;
     }
     if (initialSection === 'students') {
       return <DataTable title="Students" description="Create, edit, delete, block, and reset student access." columns={studentColumns} data={crud.students} loading={crud.loading} />;
@@ -367,7 +375,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
               </select>
             </CardContent>
           </Card>
-          <DataTable title="Attendance" description="View and override attendance by date, class, or school." columns={attendanceColumns} data={attendanceRows} loading={crud.loading} />
+          <DataTable title="Attendance" description={isStudent ? 'Your daily attendance and date-wise history.' : 'View and override attendance by date, class, or school.'} columns={attendanceColumns} data={attendanceRows} loading={crud.loading} />
         </div>
       );
     }
@@ -384,14 +392,14 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
               </select>
             </CardContent>
           </Card>
-          <DataTable title="Fees" description="Assign monthly fees, update payment status, and track student payments." columns={feeColumns} data={feeRows} loading={crud.loading} />
+          <DataTable title="Fees" description={isStudent ? 'Your monthly fee breakdown and paid/unpaid status.' : 'Assign monthly fees, update payment status, and track student payments.'} columns={feeColumns} data={feeRows} loading={crud.loading} />
         </div>
       );
     }
     if (initialSection === 'reports') {
       const reportStats: StatCard[] = [
-        { label: 'Total Students', value: String(crud.report?.total_students || 0), description: 'Active student accounts' },
-        { label: 'Total Teachers', value: String(crud.report?.total_teachers || 0), description: 'Active teacher accounts' },
+        { label: isStudent ? 'Student' : 'Total Students', value: isStudent ? (user?.full_name || 'Student') : String(crud.report?.total_students || 0), description: isStudent ? 'Academic overview' : 'Active student accounts' },
+        { label: 'Teachers', value: String(crud.report?.total_teachers || 0), description: isStudent ? 'Assigned academic support' : 'Active teacher accounts' },
         { label: 'Attendance', value: `${crud.report?.attendance_present || 0}/${(crud.report?.attendance_present || 0) + (crud.report?.attendance_absent || 0) + (crud.report?.attendance_late || 0)}`, description: 'Present over recorded attendance' },
         { label: 'Fees Paid', value: `Rs ${(crud.report?.fee_paid_amount || 0).toLocaleString()}`, description: `${crud.report?.fee_unpaid || 0} unpaid records` },
       ];
@@ -473,6 +481,12 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <DataTable title="My Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
             <DataTable title="Recent Attendance" columns={attendanceColumns} data={crud.attendance.slice(0, 8)} loading={crud.loading} />
           </>
+        ) : isStudent ? (
+          <>
+            <DataTable title="My Attendance" columns={attendanceColumns} data={crud.attendance.slice(0, 8)} loading={crud.loading} />
+            <DataTable title="My Fees" columns={feeColumns} data={crud.fees.slice(0, 8)} loading={crud.loading} />
+            <DataTable title="Class & Subject Info" columns={classColumns} data={crud.classes} loading={crud.loading} />
+          </>
         ) : (
           <>
             <DataTable title="Teachers" columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
@@ -519,10 +533,10 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium capitalize text-slate-500">
-            {isSuperAdmin ? 'Full system control' : isTeacher ? 'Teacher classroom access' : 'Organization-scoped access'}
+            {isSuperAdmin ? 'Full system control' : isTeacher ? 'Teacher classroom access' : isStudent ? 'Student self-service access' : 'Organization-scoped access'}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-normal text-slate-950">
-            {isSuperAdmin ? 'Super Admin Dashboard' : isTeacher ? 'Teacher Dashboard' : 'School Admin Dashboard'}
+            {isSuperAdmin ? 'Super Admin Dashboard' : isTeacher ? 'Teacher Dashboard' : isStudent ? 'Student Dashboard' : 'School Admin Dashboard'}
           </h1>
         </div>
         {initialSection === 'schools' && (
@@ -540,7 +554,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         {isAdminUser && initialSection === 'students' && (
           <Button disabled={crud.loading || crud.saving || crud.schools.length === 0 || crud.classes.length === 0} onClick={crud.openCreateStudentModal}>Create Student</Button>
         )}
-        {initialSection === 'attendance' && (
+        {!isStudent && initialSection === 'attendance' && (
           <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateAttendanceModal}>Mark Attendance</Button>
         )}
         {isAdminUser && initialSection === 'fees' && (
