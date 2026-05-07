@@ -668,6 +668,9 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         {isAdminUser && initialSection === 'fees' && (
           <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateFeeModal}>Assign Fee</Button>
         )}
+        {isAdminUser && initialSection === 'salaries' && (
+          <Button disabled={crud.loading || crud.saving || crud.teachers.length === 0} onClick={crud.openCreateSalaryModal}>Assign Salary</Button>
+        )}
         {!isStudent && initialSection === 'schedule' && (
           <Button disabled={crud.loading || crud.saving || crud.classes.length === 0} onClick={crud.openCreateScheduleModal}>Add Schedule</Button>
         )}
@@ -1067,6 +1070,52 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <Button variant="outline" onClick={() => crud.setFeeModalOpen(false)}>Cancel</Button>
             <Button onClick={crud.saveFee} disabled={crud.saving || !crud.feeForm.studentId || !crud.feeForm.month || crud.feeForm.amount <= 0}>
               {crud.saving ? 'Saving...' : crud.editingFeeId ? 'Save Fee' : 'Assign Fee'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={crud.salaryModalOpen}
+        title={crud.editingSalaryId ? 'Edit Salary' : 'Assign Teacher Salary'}
+        description="Assign teacher salaries and track paid or unpaid status."
+        onClose={() => crud.setSalaryModalOpen(false)}
+      >
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Teacher
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.salaryForm.teacherId} disabled={Boolean(crud.editingSalaryId)} onChange={(event) => {
+              const teacherId = Number(event.target.value);
+              const teacher = crud.teachers.find((item) => item.id === teacherId);
+              crud.setSalaryForm({ ...crud.salaryForm, teacherId, amount: teacher?.salary || crud.salaryForm.amount });
+            }}>
+              <option value={0}>Select teacher</option>
+              {crud.teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name} - {teacher.school}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Month
+            <Input type="month" value={crud.salaryForm.month} onChange={(event) => crud.setSalaryForm({ ...crud.salaryForm, month: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Amount
+            <Input type="number" value={crud.salaryForm.amount} onChange={(event) => crud.setSalaryForm({ ...crud.salaryForm, amount: Number(event.target.value) })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Status
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.salaryForm.status} onChange={(event) => crud.setSalaryForm({ ...crud.salaryForm, status: event.target.value as SalaryRow['status'] })}>
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Notes
+            <Input value={crud.salaryForm.notes} onChange={(event) => crud.setSalaryForm({ ...crud.salaryForm, notes: event.target.value })} />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setSalaryModalOpen(false)}>Cancel</Button>
+            <Button onClick={crud.saveSalary} disabled={crud.saving || !crud.salaryForm.teacherId || !crud.salaryForm.month || crud.salaryForm.amount <= 0}>
+              {crud.saving ? 'Saving...' : crud.editingSalaryId ? 'Save Salary' : 'Assign Salary'}
             </Button>
           </div>
         </div>
