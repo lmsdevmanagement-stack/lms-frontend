@@ -202,6 +202,21 @@ export interface SalaryRow {
   notes: string;
 }
 
+export interface ExpenseRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  school: string;
+  title: string;
+  category: string;
+  date: string;
+  period: 'daily' | 'weekly' | 'monthly';
+  amount: number;
+  vendor: string;
+  paymentMethod: string;
+  notes: string;
+}
+
 export interface DataTableColumn<T> {
   key: string;
   header: string;

@@ -169,3 +169,33 @@ export interface SalaryUpdateData {
   status?: SalaryResponse['status'];
   notes?: string | null;
 }
+
+export interface ExpenseResponse {
+  id: number;
+  organization_id: number;
+  school_id: number;
+  title: string;
+  category: string;
+  expense_date: string;
+  period: 'daily' | 'weekly' | 'monthly';
+  amount: number;
+  vendor?: string | null;
+  payment_method?: string | null;
+  notes?: string | null;
+  created_by_id?: number | null;
+  created_at: string;
+}
+
+export interface ExpenseCreateData {
+  school_id?: number | null;
+  title: string;
+  category: string;
+  expense_date: string;
+  period: ExpenseResponse['period'];
+  amount: number;
+  vendor?: string | null;
+  payment_method?: string | null;
+  notes?: string | null;
+}
+
+export type ExpenseUpdateData = Partial<ExpenseCreateData>;

@@ -12,6 +12,9 @@ import type {
   ClassResponse,
   ClassUpdateData,
   DashboardReport,
+  ExpenseCreateData,
+  ExpenseResponse,
+  ExpenseUpdateData,
   FeeCreateData,
   FeeResponse,
   FeeUpdateData,
@@ -257,6 +260,23 @@ export const createSalary = (data: SalaryCreateData): Promise<AxiosResponse<ApiR
 
 export const updateSalary = (salaryId: number, data: SalaryUpdateData): Promise<AxiosResponse<ApiResponse<SalaryResponse>>> => {
   return api.patch(API_ENDPOINTS.salaries.byId(salaryId), data);
+};
+
+// Expenses API
+export const listExpenses = (params?: {
+  period?: ExpenseResponse['period'];
+  expense_date?: string;
+  school_id?: number;
+}): Promise<AxiosResponse<ApiResponse<ExpenseResponse[]>>> => {
+  return api.get(API_ENDPOINTS.expenses.base, { params });
+};
+
+export const createExpense = (data: ExpenseCreateData): Promise<AxiosResponse<ApiResponse<ExpenseResponse>>> => {
+  return api.post(API_ENDPOINTS.expenses.base, data);
+};
+
+export const updateExpense = (expenseId: number, data: ExpenseUpdateData): Promise<AxiosResponse<ApiResponse<ExpenseResponse>>> => {
+  return api.patch(API_ENDPOINTS.expenses.byId(expenseId), data);
 };
 
 // Reports API
