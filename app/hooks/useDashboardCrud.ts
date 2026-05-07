@@ -11,12 +11,18 @@ import type {
   FeeResponse,
   FeeRow,
   OrganizationResponse,
+  ResultResponse,
+  ResultRow,
+  ScheduleResponse,
+  ScheduleRow,
   SchoolAdminRow,
   SchoolResponse,
   SchoolRow,
   StudentRow,
   TeacherRow,
   UserResponse,
+  WorkResponse,
+  WorkRow,
 } from '../types';
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
@@ -36,6 +42,9 @@ export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 
 };
 export type AttendanceFormState = Pick<AttendanceRow, 'studentId' | 'date' | 'status' | 'notes'>;
 export type FeeFormState = Pick<FeeRow, 'studentId' | 'month' | 'amount' | 'status' | 'notes'>;
+export type ScheduleFormState = Pick<ScheduleRow, 'classId' | 'teacherId' | 'subject' | 'weekday' | 'startTime' | 'endTime' | 'notes'>;
+export type WorkFormState = Pick<WorkRow, 'classId' | 'teacherId' | 'title' | 'description' | 'dueDate'>;
+export type ResultFormState = Pick<ResultRow, 'studentId' | 'teacherId' | 'examName' | 'subject' | 'marksObtained' | 'totalMarks' | 'examDate' | 'remarks'>;
 export type OrganizationSettingsFormState = {
   name: string;
   slug: string;
@@ -117,6 +126,35 @@ export const emptyFeeForm: FeeFormState = {
   amount: 0,
   status: 'unpaid',
   notes: '',
+};
+
+export const emptyScheduleForm: ScheduleFormState = {
+  classId: 0,
+  teacherId: 0,
+  subject: '',
+  weekday: 'Monday',
+  startTime: '',
+  endTime: '',
+  notes: '',
+};
+
+export const emptyWorkForm: WorkFormState = {
+  classId: 0,
+  teacherId: 0,
+  title: '',
+  description: '',
+  dueDate: '',
+};
+
+export const emptyResultForm: ResultFormState = {
+  studentId: 0,
+  teacherId: 0,
+  examName: '',
+  subject: '',
+  marksObtained: 0,
+  totalMarks: 100,
+  examDate: '',
+  remarks: '',
 };
 
 export const emptyOrganizationSettingsForm: OrganizationSettingsFormState = {

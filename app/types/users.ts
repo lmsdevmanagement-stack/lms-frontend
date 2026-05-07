@@ -10,6 +10,7 @@ export interface UserResponse {
   address?: string | null;
   experience?: string | null;
   subject_specialist?: string | null;
+  salary?: number | null;
   joining_date?: string | null;
   registration_number?: string | null;
   b_form_cnic?: string | null;
@@ -35,6 +36,7 @@ export interface UserCreateData {
   address?: string | null;
   experience?: string | null;
   subject_specialist?: string | null;
+  salary?: number | null;
   joining_date?: string | null;
   registration_number?: string | null;
   b_form_cnic?: string | null;
@@ -55,6 +57,7 @@ export interface UserUpdateData {
   address?: string | null;
   experience?: string | null;
   subject_specialist?: string | null;
+  salary?: number | null;
   joining_date?: string | null;
   registration_number?: string | null;
   b_form_cnic?: string | null;

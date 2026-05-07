@@ -20,6 +20,15 @@ export type {
   FeeCreateData,
   FeeResponse,
   FeeUpdateData,
+  ResultCreateData,
+  ResultResponse,
+  ResultUpdateData,
+  ScheduleCreateData,
+  ScheduleResponse,
+  ScheduleUpdateData,
+  WorkCreateData,
+  WorkResponse,
+  WorkUpdateData,
 } from './operations';
 export type {
   SchoolCreateData,
@@ -47,7 +56,10 @@ export type {
   NavigationItem,
   SchoolAdminRow,
   SchoolRow,
+  ResultRow,
+  ScheduleRow,
   StatCard,
   StudentRow,
   TeacherRow,
+  WorkRow,
 } from './dashboard';

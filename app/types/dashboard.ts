@@ -15,6 +15,9 @@ export type DashboardSection =
   | 'classes'
   | 'attendance'
   | 'fees'
+  | 'schedule'
+  | 'work'
+  | 'results'
   | 'reports'
   | 'organization-settings'
   | 'access-control'
@@ -57,6 +60,7 @@ export interface TeacherRow {
   cnic: string;
   address: string;
   experience: string;
+  salary: number;
   joiningDate: string;
   permissions: string[];
   status: 'active' | 'blocked';
@@ -135,6 +139,52 @@ export interface FeeRow {
   status: 'paid' | 'unpaid';
   paidAt: string;
   notes: string;
+}
+
+export interface ScheduleRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  classId: number;
+  teacherId: number;
+  className: string;
+  teacher: string;
+  subject: string;
+  weekday: string;
+  startTime: string;
+  endTime: string;
+  notes: string;
+}
+
+export interface WorkRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  classId: number;
+  teacherId: number;
+  className: string;
+  teacher: string;
+  title: string;
+  description: string;
+  dueDate: string;
+}
+
+export interface ResultRow {
+  id: number;
+  studentId: number;
+  organizationId: number;
+  schoolId: number;
+  classId: number;
+  teacherId: number;
+  student: string;
+  className: string;
+  teacher: string;
+  examName: string;
+  subject: string;
+  marksObtained: number;
+  totalMarks: number;
+  examDate: string;
+  remarks: string;
 }
 
 export interface DataTableColumn<T> {

@@ -15,6 +15,12 @@ import type {
   FeeCreateData,
   FeeResponse,
   FeeUpdateData,
+  ResultCreateData,
+  ResultResponse,
+  ResultUpdateData,
+  ScheduleCreateData,
+  ScheduleResponse,
+  ScheduleUpdateData,
   LoginCredentials,
   OrganizationCreateData,
   OrganizationResponse,
@@ -31,6 +37,9 @@ import type {
   UserProfileUpdateData,
   UserResponse,
   UserUpdateData,
+  WorkCreateData,
+  WorkResponse,
+  WorkUpdateData,
 } from '../types';
 
 const api: AxiosInstance = axios.create({
@@ -233,6 +242,43 @@ export const updateFee = (feeId: number, data: FeeUpdateData): Promise<AxiosResp
 // Reports API
 export const getDashboardReport = (): Promise<AxiosResponse<ApiResponse<DashboardReport>>> => {
   return api.get(API_ENDPOINTS.reports.dashboard);
+};
+
+// Academics API
+export const listSchedules = (): Promise<AxiosResponse<ApiResponse<ScheduleResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.schedules);
+};
+
+export const createSchedule = (data: ScheduleCreateData): Promise<AxiosResponse<ApiResponse<ScheduleResponse>>> => {
+  return api.post(API_ENDPOINTS.academics.schedules, data);
+};
+
+export const updateSchedule = (scheduleId: number, data: ScheduleUpdateData): Promise<AxiosResponse<ApiResponse<ScheduleResponse>>> => {
+  return api.patch(API_ENDPOINTS.academics.scheduleById(scheduleId), data);
+};
+
+export const listWork = (): Promise<AxiosResponse<ApiResponse<WorkResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.work);
+};
+
+export const createWork = (data: WorkCreateData): Promise<AxiosResponse<ApiResponse<WorkResponse>>> => {
+  return api.post(API_ENDPOINTS.academics.work, data);
+};
+
+export const updateWork = (workId: number, data: WorkUpdateData): Promise<AxiosResponse<ApiResponse<WorkResponse>>> => {
+  return api.patch(API_ENDPOINTS.academics.workById(workId), data);
+};
+
+export const listResults = (): Promise<AxiosResponse<ApiResponse<ResultResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.results);
+};
+
+export const createResult = (data: ResultCreateData): Promise<AxiosResponse<ApiResponse<ResultResponse>>> => {
+  return api.post(API_ENDPOINTS.academics.results, data);
+};
+
+export const updateResult = (resultId: number, data: ResultUpdateData): Promise<AxiosResponse<ApiResponse<ResultResponse>>> => {
+  return api.patch(API_ENDPOINTS.academics.resultById(resultId), data);
 };
 
 // Users API
