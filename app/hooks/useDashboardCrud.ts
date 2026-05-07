@@ -544,13 +544,14 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, salariesResponse, schedulesResponse, workResponse, resultsResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
+      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, salariesResponse, expensesResponse, schedulesResponse, workResponse, resultsResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
         api.listSchools(),
         api.listClasses(),
         api.listUsers(),
         api.listAttendance(),
         api.listFees(),
         api.listSalaries(),
+        api.listExpenses(),
         api.listSchedules(),
         api.listWork(),
         api.listResults(),
@@ -575,6 +576,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setWorkRows(mapWorkRows(workResponse.data.data, mappedClasses, mappedTeachers));
       setResultRows(mapResultRows(resultsResponse.data.data, mappedStudents, mappedClasses, mappedTeachers));
       setSalaryRows(mapSalaryRows(salariesResponse.data.data, mappedTeachers, schools));
+      setExpenseRows(mapExpenseRows(expensesResponse.data.data, schools));
       setReport(reportResponse.data.data);
       const currentOrganization = organizationsResponse.data.data.find((item) => item.id === organizationId) || organizationsResponse.data.data[0] || null;
       setOrganization(currentOrganization);
@@ -608,6 +610,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setWorkRows([]);
       setResultRows([]);
       setSalaryRows([]);
+      setExpenseRows([]);
       setReport(null);
       setOrganization(null);
       setActivityRows([]);
