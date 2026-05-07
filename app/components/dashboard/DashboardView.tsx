@@ -14,7 +14,7 @@ import { Skeleton } from '../ui/skeleton';
 import { useDashboardAuth } from '../../hooks/useDashboardAuth';
 import { useDashboardCrud } from '../../hooks/useDashboardCrud';
 import { useMounted } from '../../hooks/useMounted';
-import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, FeeRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow } from '../../types';
+import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, FeeRow, ResultRow, ScheduleRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow, WorkRow } from '../../types';
 
 interface DashboardViewProps {
   initialSection?: DashboardSection;
@@ -71,12 +71,14 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
   ] : isTeacher ? [
     { label: 'Assigned Classes', value: String(crud.classes.length), description: 'Classes assigned to you' },
     { label: 'Assigned Students', value: String(crud.students.length), description: 'Students in your classes' },
+    { label: 'Salary', value: `Rs ${(user?.salary || 0).toLocaleString()}`, description: 'Your salary record' },
     { label: 'Attendance Records', value: String(crud.attendance.length), description: 'Recorded classroom attendance' },
     { label: 'Present', value: String(crud.attendance.filter((row) => row.status === 'present').length), description: 'Present attendance entries' },
   ] : isStudent ? [
     { label: 'Attendance', value: `${crud.attendance.filter((row) => row.status === 'present').length}/${crud.attendance.length}`, description: 'Present over recorded attendance' },
     { label: 'Paid Fees', value: String(crud.fees.filter((row) => row.status === 'paid').length), description: 'Paid monthly fee records' },
     { label: 'Unpaid Fees', value: String(crud.fees.filter((row) => row.status === 'unpaid').length), description: 'Pending monthly fee records' },
+    { label: 'Marks', value: String(crud.results.length), description: 'Published marks and tests' },
     { label: 'Class', value: crud.classes[0]?.name || 'Unassigned', description: crud.classes[0]?.section || 'Class assignment' },
   ] : [
     { label: 'Teachers', value: String(crud.teachers.length), description: 'Your school teachers' },
@@ -283,6 +285,33 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       ),
       className: 'text-right',
     },
+  ];
+
+  const scheduleColumns: DataTableColumn<ScheduleRow>[] = [
+    { key: 'subject', header: 'Subject', cell: (row) => <span className="font-medium text-slate-950">{row.subject}</span> },
+    { key: 'className', header: 'Class', cell: (row) => row.className },
+    { key: 'teacher', header: 'Teacher', cell: (row) => row.teacher },
+    { key: 'weekday', header: 'Day', cell: (row) => row.weekday },
+    { key: 'time', header: 'Time', cell: (row) => `${row.startTime || '-'} - ${row.endTime || '-'}` },
+    { key: 'actions', header: 'Actions', cell: (row) => isStudent ? <span className="text-xs text-slate-500">Read only</span> : <Button variant="ghost" onClick={() => crud.openEditScheduleModal(row)}>Edit</Button>, className: 'text-right' },
+  ];
+
+  const workColumns: DataTableColumn<WorkRow>[] = [
+    { key: 'title', header: 'Work', cell: (row) => <span className="font-medium text-slate-950">{row.title}</span> },
+    { key: 'className', header: 'Class', cell: (row) => row.className },
+    { key: 'teacher', header: 'Teacher', cell: (row) => row.teacher },
+    { key: 'dueDate', header: 'Due Date', cell: (row) => row.dueDate || 'No due date' },
+    { key: 'description', header: 'Details', cell: (row) => row.description || 'No details' },
+    { key: 'actions', header: 'Actions', cell: (row) => isStudent ? <span className="text-xs text-slate-500">Read only</span> : <Button variant="ghost" onClick={() => crud.openEditWorkModal(row)}>Edit</Button>, className: 'text-right' },
+  ];
+
+  const resultColumns: DataTableColumn<ResultRow>[] = [
+    { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
+    { key: 'examName', header: 'Exam', cell: (row) => row.examName },
+    { key: 'subject', header: 'Subject', cell: (row) => row.subject },
+    { key: 'marks', header: 'Marks', cell: (row) => `${row.marksObtained}/${row.totalMarks}` },
+    { key: 'examDate', header: 'Date', cell: (row) => row.examDate || 'No date' },
+    { key: 'actions', header: 'Actions', cell: (row) => isStudent ? <span className="text-xs text-slate-500">Read only</span> : <Button variant="ghost" onClick={() => crud.openEditResultModal(row)}>Edit</Button>, className: 'text-right' },
   ];
 
   const activityColumns: DataTableColumn<ActivityResponse>[] = [

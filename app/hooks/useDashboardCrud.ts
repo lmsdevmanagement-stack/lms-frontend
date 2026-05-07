@@ -593,6 +593,24 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     return filterBySearch(scopedRows, searchTerm);
   }, [feeRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
 
+  const scopedSchedules = useMemo(() => {
+    const orgRows = isSuperAdmin ? scheduleRows : scheduleRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [scheduleRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
+  const scopedWork = useMemo(() => {
+    const orgRows = isSuperAdmin ? workRows : workRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [workRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
+  const scopedResults = useMemo(() => {
+    const orgRows = isSuperAdmin ? resultRows : resultRows.filter((row) => row.organizationId === organizationId);
+    const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
+    return filterBySearch(scopedRows, searchTerm);
+  }, [resultRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
+
   const openCreateSchoolModal = () => {
     setEditingSchoolId(null);
     setSchoolForm(emptySchoolForm);
@@ -845,6 +863,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           address: teacherForm.address || null,
           experience: teacherForm.experience || null,
           subject_specialist: teacherForm.subject || null,
+          salary: Number(teacherForm.salary) || null,
           joining_date: teacherForm.joiningDate || null,
           is_active: teacherForm.status !== 'blocked',
         });
@@ -859,6 +878,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           address: teacherForm.address || null,
           experience: teacherForm.experience || null,
           subject_specialist: teacherForm.subject || null,
+          salary: Number(teacherForm.salary) || null,
           joining_date: teacherForm.joiningDate || null,
           organization_id: selectedSchool?.organizationId || organizationId,
           school_id: Number(teacherForm.schoolId),
@@ -1129,6 +1149,131 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     }
   };
 
+  const openCreateScheduleModal = () => {
+    setEditingScheduleId(null);
+    setScheduleForm({ ...emptyScheduleForm, classId: scopedClasses[0]?.id || 0, teacherId: scopedClasses[0]?.teacherId || 0 });
+    setScheduleModalOpen(true);
+  };
+
+  const openEditScheduleModal = (schedule: ScheduleRow) => {
+    setEditingScheduleId(schedule.id);
+    setScheduleForm({
+      classId: schedule.classId,
+      teacherId: schedule.teacherId,
+      subject: schedule.subject,
+      weekday: schedule.weekday,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      notes: schedule.notes,
+    });
+    setScheduleModalOpen(true);
+  };
+
+  const saveSchedule = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        class_id: Number(scheduleForm.classId),
+        teacher_id: Number(scheduleForm.teacherId) || null,
+        subject: scheduleForm.subject,
+        weekday: scheduleForm.weekday,
+        start_time: scheduleForm.startTime || null,
+        end_time: scheduleForm.endTime || null,
+        notes: scheduleForm.notes || null,
+      };
+      if (editingScheduleId) await api.updateSchedule(editingScheduleId, payload);
+      else await api.createSchedule(payload);
+      setScheduleModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateWorkModal = () => {
+    setEditingWorkId(null);
+    setWorkForm({ ...emptyWorkForm, classId: scopedClasses[0]?.id || 0, teacherId: scopedClasses[0]?.teacherId || 0 });
+    setWorkModalOpen(true);
+  };
+
+  const openEditWorkModal = (work: WorkRow) => {
+    setEditingWorkId(work.id);
+    setWorkForm({
+      classId: work.classId,
+      teacherId: work.teacherId,
+      title: work.title,
+      description: work.description,
+      dueDate: work.dueDate,
+    });
+    setWorkModalOpen(true);
+  };
+
+  const saveWork = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        class_id: Number(workForm.classId),
+        teacher_id: Number(workForm.teacherId) || null,
+        title: workForm.title,
+        description: workForm.description || null,
+        due_date: workForm.dueDate || null,
+      };
+      if (editingWorkId) await api.updateWork(editingWorkId, payload);
+      else await api.createWork(payload);
+      setWorkModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateResultModal = () => {
+    const defaultStudent = scopedStudents[0];
+    setEditingResultId(null);
+    setResultForm({
+      ...emptyResultForm,
+      studentId: defaultStudent?.id || 0,
+      teacherId: defaultStudent ? scopedClasses.find((item) => item.id === defaultStudent.classId)?.teacherId || 0 : 0,
+    });
+    setResultModalOpen(true);
+  };
+
+  const openEditResultModal = (result: ResultRow) => {
+    setEditingResultId(result.id);
+    setResultForm({
+      studentId: result.studentId,
+      teacherId: result.teacherId,
+      examName: result.examName,
+      subject: result.subject,
+      marksObtained: result.marksObtained,
+      totalMarks: result.totalMarks,
+      examDate: result.examDate,
+      remarks: result.remarks,
+    });
+    setResultModalOpen(true);
+  };
+
+  const saveResult = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        teacher_id: Number(resultForm.teacherId) || null,
+        exam_name: resultForm.examName,
+        subject: resultForm.subject,
+        marks_obtained: Number(resultForm.marksObtained),
+        total_marks: Number(resultForm.totalMarks),
+        exam_date: resultForm.examDate || null,
+        remarks: resultForm.remarks || null,
+      };
+      if (editingResultId) await api.updateResult(editingResultId, payload);
+      else await api.createResult({ ...payload, student_id: Number(resultForm.studentId) });
+      setResultModalOpen(false);
+      await loadDashboardData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const saveOrganizationSettings = async () => {
     if (!organization) return;
     setSaving(true);
@@ -1180,6 +1325,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     students: scopedStudents,
     attendance: scopedAttendance,
     fees: scopedFees,
+    schedules: scopedSchedules,
+    work: scopedWork,
+    results: scopedResults,
     activities: scopedActivities,
     report,
     organization,
@@ -1192,6 +1340,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     studentModalOpen,
     attendanceModalOpen,
     feeModalOpen,
+    scheduleModalOpen,
+    workModalOpen,
+    resultModalOpen,
     schoolAdminModalOpen,
     editingSchoolId,
     editingClassId,
@@ -1199,6 +1350,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     editingStudentId,
     editingAttendanceId,
     editingFeeId,
+    editingScheduleId,
+    editingWorkId,
+    editingResultId,
     editingSchoolAdminId,
     schoolForm,
     classForm,
@@ -1206,6 +1360,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     studentForm,
     attendanceForm,
     feeForm,
+    scheduleForm,
+    workForm,
+    resultForm,
     organizationSettingsForm,
     profileForm,
     schoolAdminForm,
@@ -1215,6 +1372,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setStudentForm,
     setAttendanceForm,
     setFeeForm,
+    setScheduleForm,
+    setWorkForm,
+    setResultForm,
     setOrganizationSettingsForm,
     setProfileForm,
     setSchoolAdminForm,
@@ -1224,6 +1384,9 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setStudentModalOpen,
     setAttendanceModalOpen,
     setFeeModalOpen,
+    setScheduleModalOpen,
+    setWorkModalOpen,
+    setResultModalOpen,
     setSchoolAdminModalOpen,
     openCreateSchoolModal,
     openEditSchoolModal,
@@ -1262,6 +1425,15 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     openEditFeeModal,
     saveFee,
     updateFeeStatus,
+    openCreateScheduleModal,
+    openEditScheduleModal,
+    saveSchedule,
+    openCreateWorkModal,
+    openEditWorkModal,
+    saveWork,
+    openCreateResultModal,
+    openEditResultModal,
+    saveResult,
     saveOrganizationSettings,
     saveMyProfile,
     saveMyPassword,
