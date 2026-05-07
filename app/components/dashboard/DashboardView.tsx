@@ -367,6 +367,30 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     },
   ];
 
+  const expenseRows = crud.expenses.filter((row) => {
+    if (expenseDateFilter && row.date !== expenseDateFilter) return false;
+    if (expensePeriodFilter !== 'all' && row.period !== expensePeriodFilter) return false;
+    if (expenseSchoolFilter && row.schoolId !== expenseSchoolFilter) return false;
+    return true;
+  });
+  const expenseTotal = expenseRows.reduce((total, row) => total + row.amount, 0);
+  const expenseSummaryStats: StatCard[] = [
+    { label: 'Total Expenses', value: `Rs ${expenseTotal.toLocaleString()}`, description: `${expenseRows.length} filtered records` },
+    { label: 'Daily', value: `Rs ${expenseRows.filter((row) => row.period === 'daily').reduce((total, row) => total + row.amount, 0).toLocaleString()}`, description: 'Daily expense total' },
+    { label: 'Monthly', value: `Rs ${expenseRows.filter((row) => row.period === 'monthly').reduce((total, row) => total + row.amount, 0).toLocaleString()}`, description: 'Monthly expense total' },
+  ];
+  const expenseColumns: DataTableColumn<ExpenseRow>[] = [
+    { key: 'title', header: 'Expense', cell: (row) => <span className="font-medium text-slate-950">{row.title}</span> },
+    { key: 'date', header: 'Date', cell: (row) => row.date },
+    { key: 'period', header: 'Period', cell: (row) => <Badge variant="secondary">{row.period}</Badge> },
+    { key: 'category', header: 'Category', cell: (row) => row.category },
+    { key: 'school', header: 'School', cell: (row) => row.school },
+    { key: 'amount', header: 'Amount', cell: (row) => `Rs ${row.amount.toLocaleString()}` },
+    { key: 'vendor', header: 'Vendor', cell: (row) => row.vendor || '-' },
+    { key: 'paymentMethod', header: 'Payment', cell: (row) => row.paymentMethod || '-' },
+    { key: 'actions', header: 'Actions', cell: (row) => <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditExpenseModal(row)}>Edit</Button>, className: 'text-right' },
+  ];
+
   const activityColumns: DataTableColumn<ActivityResponse>[] = [
     {
       key: 'description',
@@ -417,16 +441,25 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
     }
     if (activeSection === 'expenses') {
       return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Expenses</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {['School operating expenses', 'Vendor payments', 'Salary expenses', 'Expense reports', 'Approval workflow', 'Export records'].map((item) => (
-              <Button key={item} variant="outline" className="justify-start">{item}</Button>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <StatsGrid stats={expenseSummaryStats} />
+          <Card>
+            <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+              <Input type="date" value={expenseDateFilter} onChange={(event) => setExpenseDateFilter(event.target.value)} />
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expensePeriodFilter} onChange={(event) => setExpensePeriodFilter(event.target.value as 'all' | ExpenseRow['period'])}>
+                <option value="all">All periods</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expenseSchoolFilter} onChange={(event) => setExpenseSchoolFilter(Number(event.target.value))}>
+                <option value={0}>All schools</option>
+                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+              </select>
+            </CardContent>
+          </Card>
+          <DataTable title="Expenses" description="Record daily, weekly, or monthly school expenses and review totals." columns={expenseColumns} data={expenseRows} loading={crud.loading} />
+        </div>
       );
     }
     if (activeSection === 'admin-permissions') {
@@ -642,7 +675,7 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       role={role}
       activeSection={activeSection}
       searchTerm={searchTerm}
-      onSectionChange={() => undefined}
+      onSectionChange={setActiveSection}
       onSearchChange={setSearchTerm}
       onLogout={handleLogout}
     >
@@ -678,6 +711,9 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
         )}
         {isAdminUser && activeSection === 'salaries' && (
           <Button disabled={crud.loading || crud.saving || crud.teachers.length === 0} onClick={crud.openCreateSalaryModal}>Assign Salary</Button>
+        )}
+        {isAdminUser && activeSection === 'expenses' && (
+          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateExpenseModal}>Add Expense</Button>
         )}
         {!isStudent && activeSection === 'schedule' && (
           <Button disabled={crud.loading || crud.saving || crud.classes.length === 0} onClick={crud.openCreateScheduleModal}>Add Schedule</Button>
@@ -1124,6 +1160,71 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <Button variant="outline" onClick={() => crud.setSalaryModalOpen(false)}>Cancel</Button>
             <Button onClick={crud.saveSalary} disabled={crud.saving || !crud.salaryForm.teacherId || !crud.salaryForm.month || crud.salaryForm.amount <= 0}>
               {crud.saving ? 'Saving...' : crud.editingSalaryId ? 'Save Salary' : 'Assign Salary'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={crud.expenseModalOpen}
+        title={crud.editingExpenseId ? 'Edit Expense' : 'Add Expense'}
+        description="Record daily, weekly, or monthly school expenses."
+        onClose={() => crud.setExpenseModalOpen(false)}
+      >
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            School
+            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.expenseForm.schoolId} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, schoolId: Number(event.target.value) })}>
+              <option value={0}>Select school</option>
+              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Title
+            <Input value={crud.expenseForm.title} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, title: event.target.value })} />
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              Category
+              <Input value={crud.expenseForm.category} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, category: event.target.value })} />
+            </label>
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              Period
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.expenseForm.period} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, period: event.target.value as ExpenseRow['period'] })}>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </label>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              Date
+              <Input type="date" value={crud.expenseForm.date} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, date: event.target.value })} />
+            </label>
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              Amount
+              <Input type="number" value={crud.expenseForm.amount} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, amount: Number(event.target.value) })} />
+            </label>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              Vendor
+              <Input value={crud.expenseForm.vendor} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, vendor: event.target.value })} />
+            </label>
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              Payment Method
+              <Input value={crud.expenseForm.paymentMethod} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, paymentMethod: event.target.value })} />
+            </label>
+          </div>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Notes
+            <Input value={crud.expenseForm.notes} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, notes: event.target.value })} />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => crud.setExpenseModalOpen(false)}>Cancel</Button>
+            <Button onClick={crud.saveExpense} disabled={crud.saving || !crud.expenseForm.schoolId || !crud.expenseForm.title || !crud.expenseForm.date || crud.expenseForm.amount <= 0}>
+              {crud.saving ? 'Saving...' : crud.editingExpenseId ? 'Save Expense' : 'Add Expense'}
             </Button>
           </div>
         </div>
