@@ -657,6 +657,14 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <Input value={crud.teacherForm.name} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, name: event.target.value })} />
           </label>
           <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Father Name
+            <Input value={crud.teacherForm.fatherName} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, fatherName: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            CNIC
+            <Input value={crud.teacherForm.cnic} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, cnic: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
             Email
             <Input type="email" value={crud.teacherForm.email} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, email: event.target.value })} />
           </label>
@@ -676,6 +684,18 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
           <label className="grid gap-2 text-sm font-medium text-slate-700">
             Subject
             <Input value={crud.teacherForm.subject} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, subject: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Experience
+            <Input value={crud.teacherForm.experience} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, experience: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Joining Date
+            <Input type="date" value={crud.teacherForm.joiningDate} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, joiningDate: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Address
+            <Input value={crud.teacherForm.address} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, address: event.target.value })} />
           </label>
           <label className="grid gap-2 text-sm font-medium text-slate-700">
             Status
