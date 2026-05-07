@@ -8,6 +8,8 @@ import type {
   ClassResponse,
   ClassRow,
   DashboardReport,
+  ExpenseResponse,
+  ExpenseRow,
   FeeResponse,
   FeeRow,
   OrganizationResponse,
@@ -44,6 +46,7 @@ export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 
 };
 export type AttendanceFormState = Pick<AttendanceRow, 'studentId' | 'date' | 'status' | 'notes'>;
 export type FeeFormState = Pick<FeeRow, 'studentId' | 'month' | 'amount' | 'status' | 'notes'>;
+export type ExpenseFormState = Pick<ExpenseRow, 'schoolId' | 'title' | 'category' | 'date' | 'period' | 'amount' | 'vendor' | 'paymentMethod' | 'notes'>;
 export type ScheduleFormState = Pick<ScheduleRow, 'classId' | 'teacherId' | 'subject' | 'weekday' | 'startTime' | 'endTime' | 'notes'>;
 export type WorkFormState = Pick<WorkRow, 'classId' | 'teacherId' | 'title' | 'description' | 'dueDate'>;
 export type ResultFormState = Pick<ResultRow, 'studentId' | 'teacherId' | 'examName' | 'subject' | 'marksObtained' | 'totalMarks' | 'examDate' | 'remarks'>;
@@ -129,6 +132,18 @@ export const emptyFeeForm: FeeFormState = {
   month: new Date().toISOString().slice(0, 7),
   amount: 0,
   status: 'unpaid',
+  notes: '',
+};
+
+export const emptyExpenseForm: ExpenseFormState = {
+  schoolId: 0,
+  title: '',
+  category: 'General',
+  date: new Date().toISOString().slice(0, 10),
+  period: 'daily',
+  amount: 0,
+  vendor: '',
+  paymentMethod: '',
   notes: '',
 };
 
@@ -369,6 +384,26 @@ function mapSalaryRows(records: SalaryResponse[], teachers: TeacherRow[], school
       amount: record.amount,
       status: record.status,
       paidAt: record.paid_at || '',
+      notes: record.notes || '',
+    };
+  });
+}
+
+function mapExpenseRows(records: ExpenseResponse[], schools: SchoolResponse[]): ExpenseRow[] {
+  return records.map((record) => {
+    const school = schools.find((item) => item.id === record.school_id);
+    return {
+      id: record.id,
+      organizationId: record.organization_id,
+      schoolId: record.school_id,
+      school: school?.name || 'Unassigned',
+      title: record.title,
+      category: record.category,
+      date: record.expense_date.slice(0, 10),
+      period: record.period,
+      amount: record.amount,
+      vendor: record.vendor || '',
+      paymentMethod: record.payment_method || '',
       notes: record.notes || '',
     };
   });
