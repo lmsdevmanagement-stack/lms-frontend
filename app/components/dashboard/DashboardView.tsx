@@ -784,6 +784,26 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <Input value={crud.studentForm.name} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, name: event.target.value })} />
           </label>
           <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Registration Number
+            <Input value={crud.studentForm.registrationNumber} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, registrationNumber: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Father Name
+            <Input value={crud.studentForm.fatherName} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, fatherName: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            B-Form / CNIC
+            <Input value={crud.studentForm.bFormCnic} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, bFormCnic: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Roll Number
+            <Input value={crud.studentForm.rollNumber} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, rollNumber: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Date of Birth
+            <Input type="date" value={crud.studentForm.dateOfBirth} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, dateOfBirth: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
             Email
             <Input type="email" value={crud.studentForm.email} disabled={Boolean(crud.editingStudentId)} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, email: event.target.value })} />
           </label>
@@ -820,6 +840,18 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
                   </option>
                 ))}
             </select>
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Father CNIC
+            <Input value={crud.studentForm.fatherCnic} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, fatherCnic: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Admission Date
+            <Input type="date" value={crud.studentForm.admissionDate} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, admissionDate: event.target.value })} />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-slate-700">
+            Address
+            <Input value={crud.studentForm.address} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, address: event.target.value })} />
           </label>
           <label className="grid gap-2 text-sm font-medium text-slate-700">
             Status
