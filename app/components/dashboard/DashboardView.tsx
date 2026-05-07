@@ -518,11 +518,13 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <DataTable title="My Classes" columns={classColumns} data={crud.classes} loading={crud.loading} />
             <DataTable title="My Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
             <DataTable title="Recent Attendance" columns={attendanceColumns} data={crud.attendance.slice(0, 8)} loading={crud.loading} />
+            <DataTable title="Class Schedule" columns={scheduleColumns} data={crud.schedules.slice(0, 8)} loading={crud.loading} />
           </>
         ) : isStudent ? (
           <>
             <DataTable title="My Attendance" columns={attendanceColumns} data={crud.attendance.slice(0, 8)} loading={crud.loading} />
             <DataTable title="My Fees" columns={feeColumns} data={crud.fees.slice(0, 8)} loading={crud.loading} />
+            <DataTable title="My Marks" columns={resultColumns} data={crud.results.slice(0, 8)} loading={crud.loading} />
             <DataTable title="Class & Subject Info" columns={classColumns} data={crud.classes} loading={crud.loading} />
           </>
         ) : (
