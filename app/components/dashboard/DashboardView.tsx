@@ -67,6 +67,11 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       value: String([...crud.schools, ...crud.schoolAdmins].filter((row) => row.status === 'blocked').length),
       description: 'Inactive records',
     },
+  ] : isTeacher ? [
+    { label: 'Assigned Classes', value: String(crud.classes.length), description: 'Classes assigned to you' },
+    { label: 'Assigned Students', value: String(crud.students.length), description: 'Students in your classes' },
+    { label: 'Attendance Records', value: String(crud.attendance.length), description: 'Recorded classroom attendance' },
+    { label: 'Present', value: String(crud.attendance.filter((row) => row.status === 'present').length), description: 'Present attendance entries' },
   ] : [
     { label: 'Teachers', value: String(crud.teachers.length), description: 'Your school teachers' },
     { label: 'Students', value: String(crud.students.length), description: 'Your school students' },
@@ -452,6 +457,12 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
             <DataTable title="Organizations / Schools" columns={schoolColumns} data={crud.schools} loading={crud.loading} />
             <DataTable title="School Admins" columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />
             <DataTable title="Recent User Activities" columns={activityColumns} data={crud.activities.slice(0, 8)} loading={crud.loading} />
+          </>
+        ) : isTeacher ? (
+          <>
+            <DataTable title="My Classes" columns={classColumns} data={crud.classes} loading={crud.loading} />
+            <DataTable title="My Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
+            <DataTable title="Recent Attendance" columns={attendanceColumns} data={crud.attendance.slice(0, 8)} loading={crud.loading} />
           </>
         ) : (
           <>
