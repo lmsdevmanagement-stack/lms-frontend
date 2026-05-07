@@ -1,10 +1,8 @@
 'use client';
 
 import { LogOut, PanelLeftOpen, Search, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { DASHBOARD_NAV_ITEMS } from '../../constants/dashboard';
-import { APP_ROUTES } from '../../constants/routes';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import type { DashboardSection, UserResponse } from '../../types';
@@ -32,7 +30,6 @@ export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
   const effectiveRole = role || user?.role || null;
   const navItems = useMemo(
     () => (effectiveRole ? DASHBOARD_NAV_ITEMS.filter((item) => item.roles.includes(effectiveRole)) : []),
@@ -68,7 +65,8 @@ export default function DashboardLayout({
                   type="button"
                   onClick={() => {
                     onSectionChange(item.id);
-                    router.push(item.id === 'overview' ? APP_ROUTES.dashboard : APP_ROUTES.dashboardSection(item.id));
+                    const nextPath = item.id === 'overview' ? '/dashboard' : `/dashboard/${item.id}`;
+                    window.history.pushState(null, '', nextPath);
                     setOpen(false);
                   }}
                   className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition ${

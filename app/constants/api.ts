@@ -32,11 +32,29 @@ export const API_ENDPOINTS = {
     base: '/fees',
     byId: (feeId: number) => `/fees/${feeId}`,
   },
+  salaries: {
+    base: '/salaries',
+    byId: (salaryId: number) => `/salaries/${salaryId}`,
+  },
+  expenses: {
+    base: '/expenses',
+    byId: (expenseId: number) => `/expenses/${expenseId}`,
+  },
   reports: {
     dashboard: '/reports/dashboard',
+  },
+  academics: {
+    schedules: '/academics/schedules',
+    scheduleById: (scheduleId: number) => `/academics/schedules/${scheduleId}`,
+    work: '/academics/work',
+    workById: (workId: number) => `/academics/work/${workId}`,
+    results: '/academics/results',
+    resultById: (resultId: number) => `/academics/results/${resultId}`,
   },
   users: {
     base: '/users',
     byId: (userId: number) => `/users/${userId}`,
+    meProfile: '/users/me/profile',
+    mePassword: '/users/me/password',
   },
 } as const;

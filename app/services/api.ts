@@ -12,9 +12,21 @@ import type {
   ClassResponse,
   ClassUpdateData,
   DashboardReport,
+  ExpenseCreateData,
+  ExpenseResponse,
+  ExpenseUpdateData,
   FeeCreateData,
   FeeResponse,
   FeeUpdateData,
+  ResultCreateData,
+  ResultResponse,
+  ResultUpdateData,
+  ScheduleCreateData,
+  ScheduleResponse,
+  ScheduleUpdateData,
+  SalaryCreateData,
+  SalaryResponse,
+  SalaryUpdateData,
   LoginCredentials,
   OrganizationCreateData,
   OrganizationResponse,
@@ -27,8 +39,13 @@ import type {
   SchoolUpdateData,
   TokenResponse,
   UserCreateData,
+  UserPasswordUpdateData,
+  UserProfileUpdateData,
   UserResponse,
   UserUpdateData,
+  WorkCreateData,
+  WorkResponse,
+  WorkUpdateData,
 } from '../types';
 
 const api: AxiosInstance = axios.create({
@@ -228,9 +245,80 @@ export const updateFee = (feeId: number, data: FeeUpdateData): Promise<AxiosResp
   return api.patch(API_ENDPOINTS.fees.byId(feeId), data);
 };
 
+// Salaries API
+export const listSalaries = (params?: {
+  salary_month?: string;
+  school_id?: number;
+  status?: SalaryResponse['status'];
+}): Promise<AxiosResponse<ApiResponse<SalaryResponse[]>>> => {
+  return api.get(API_ENDPOINTS.salaries.base, { params });
+};
+
+export const createSalary = (data: SalaryCreateData): Promise<AxiosResponse<ApiResponse<SalaryResponse>>> => {
+  return api.post(API_ENDPOINTS.salaries.base, data);
+};
+
+export const updateSalary = (salaryId: number, data: SalaryUpdateData): Promise<AxiosResponse<ApiResponse<SalaryResponse>>> => {
+  return api.patch(API_ENDPOINTS.salaries.byId(salaryId), data);
+};
+
+// Expenses API
+export const listExpenses = (params?: {
+  period?: ExpenseResponse['period'];
+  expense_date?: string;
+  school_id?: number;
+}): Promise<AxiosResponse<ApiResponse<ExpenseResponse[]>>> => {
+  return api.get(API_ENDPOINTS.expenses.base, { params });
+};
+
+export const createExpense = (data: ExpenseCreateData): Promise<AxiosResponse<ApiResponse<ExpenseResponse>>> => {
+  return api.post(API_ENDPOINTS.expenses.base, data);
+};
+
+export const updateExpense = (expenseId: number, data: ExpenseUpdateData): Promise<AxiosResponse<ApiResponse<ExpenseResponse>>> => {
+  return api.patch(API_ENDPOINTS.expenses.byId(expenseId), data);
+};
+
 // Reports API
 export const getDashboardReport = (): Promise<AxiosResponse<ApiResponse<DashboardReport>>> => {
   return api.get(API_ENDPOINTS.reports.dashboard);
+};
+
+// Academics API
+export const listSchedules = (): Promise<AxiosResponse<ApiResponse<ScheduleResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.schedules);
+};
+
+export const createSchedule = (data: ScheduleCreateData): Promise<AxiosResponse<ApiResponse<ScheduleResponse>>> => {
+  return api.post(API_ENDPOINTS.academics.schedules, data);
+};
+
+export const updateSchedule = (scheduleId: number, data: ScheduleUpdateData): Promise<AxiosResponse<ApiResponse<ScheduleResponse>>> => {
+  return api.patch(API_ENDPOINTS.academics.scheduleById(scheduleId), data);
+};
+
+export const listWork = (): Promise<AxiosResponse<ApiResponse<WorkResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.work);
+};
+
+export const createWork = (data: WorkCreateData): Promise<AxiosResponse<ApiResponse<WorkResponse>>> => {
+  return api.post(API_ENDPOINTS.academics.work, data);
+};
+
+export const updateWork = (workId: number, data: WorkUpdateData): Promise<AxiosResponse<ApiResponse<WorkResponse>>> => {
+  return api.patch(API_ENDPOINTS.academics.workById(workId), data);
+};
+
+export const listResults = (): Promise<AxiosResponse<ApiResponse<ResultResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.results);
+};
+
+export const createResult = (data: ResultCreateData): Promise<AxiosResponse<ApiResponse<ResultResponse>>> => {
+  return api.post(API_ENDPOINTS.academics.results, data);
+};
+
+export const updateResult = (resultId: number, data: ResultUpdateData): Promise<AxiosResponse<ApiResponse<ResultResponse>>> => {
+  return api.patch(API_ENDPOINTS.academics.resultById(resultId), data);
 };
 
 // Users API
@@ -248,6 +336,14 @@ export const getUser = (userId: number): Promise<AxiosResponse<ApiResponse<UserR
 
 export const updateUser = (userId: number, data: UserUpdateData): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {
   return api.patch(API_ENDPOINTS.users.byId(userId), data);
+};
+
+export const updateMyProfile = (data: UserProfileUpdateData): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {
+  return api.patch(API_ENDPOINTS.users.meProfile, data);
+};
+
+export const updateMyPassword = (data: UserPasswordUpdateData): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {
+  return api.patch(API_ENDPOINTS.users.mePassword, data);
 };
 
 export const deactivateUser = (userId: number): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {

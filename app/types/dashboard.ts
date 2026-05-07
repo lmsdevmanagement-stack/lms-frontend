@@ -15,9 +15,14 @@ export type DashboardSection =
   | 'classes'
   | 'attendance'
   | 'fees'
+  | 'salaries'
+  | 'schedule'
+  | 'work'
+  | 'results'
   | 'reports'
   | 'organization-settings'
   | 'access-control'
+  | 'profile'
   | 'school-admins'
   | 'activities'
   | 'expenses'
@@ -52,6 +57,12 @@ export interface TeacherRow {
   email: string;
   school: string;
   subject: string;
+  fatherName: string;
+  cnic: string;
+  address: string;
+  experience: string;
+  salary: number;
+  joiningDate: string;
   permissions: string[];
   status: 'active' | 'blocked';
 }
@@ -87,6 +98,14 @@ export interface StudentRow {
   classId: number;
   name: string;
   email: string;
+  registrationNumber: string;
+  fatherName: string;
+  bFormCnic: string;
+  rollNumber: string;
+  dateOfBirth: string;
+  address: string;
+  fatherCnic: string;
+  admissionDate: string;
   school: string;
   className: string;
   permissions: string[];
@@ -120,6 +139,81 @@ export interface FeeRow {
   amount: number;
   status: 'paid' | 'unpaid';
   paidAt: string;
+  notes: string;
+}
+
+export interface ScheduleRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  classId: number;
+  teacherId: number;
+  className: string;
+  teacher: string;
+  subject: string;
+  weekday: string;
+  startTime: string;
+  endTime: string;
+  notes: string;
+}
+
+export interface WorkRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  classId: number;
+  teacherId: number;
+  className: string;
+  teacher: string;
+  title: string;
+  description: string;
+  dueDate: string;
+}
+
+export interface ResultRow {
+  id: number;
+  studentId: number;
+  organizationId: number;
+  schoolId: number;
+  classId: number;
+  teacherId: number;
+  student: string;
+  className: string;
+  teacher: string;
+  examName: string;
+  subject: string;
+  marksObtained: number;
+  totalMarks: number;
+  examDate: string;
+  remarks: string;
+}
+
+export interface SalaryRow {
+  id: number;
+  teacherId: number;
+  organizationId: number;
+  schoolId: number;
+  teacher: string;
+  school: string;
+  month: string;
+  amount: number;
+  status: 'paid' | 'unpaid';
+  paidAt: string;
+  notes: string;
+}
+
+export interface ExpenseRow {
+  id: number;
+  organizationId: number;
+  schoolId: number;
+  school: string;
+  title: string;
+  category: string;
+  date: string;
+  period: 'daily' | 'weekly' | 'monthly';
+  amount: number;
+  vendor: string;
+  paymentMethod: string;
   notes: string;
 }
 

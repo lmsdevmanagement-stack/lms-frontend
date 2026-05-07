@@ -64,3 +64,138 @@ export interface DashboardReport {
   fee_paid_amount: number;
   fee_unpaid_amount: number;
 }
+
+export interface ScheduleResponse {
+  id: number;
+  organization_id: number;
+  school_id: number;
+  class_id: number;
+  teacher_id?: number | null;
+  subject: string;
+  weekday: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface ScheduleCreateData {
+  class_id: number;
+  teacher_id?: number | null;
+  subject: string;
+  weekday: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  notes?: string | null;
+}
+
+export type ScheduleUpdateData = Partial<ScheduleCreateData>;
+
+export interface WorkResponse {
+  id: number;
+  organization_id: number;
+  school_id: number;
+  class_id: number;
+  teacher_id?: number | null;
+  title: string;
+  description?: string | null;
+  due_date?: string | null;
+  created_at: string;
+}
+
+export interface WorkCreateData {
+  class_id: number;
+  teacher_id?: number | null;
+  title: string;
+  description?: string | null;
+  due_date?: string | null;
+}
+
+export type WorkUpdateData = Partial<WorkCreateData>;
+
+export interface ResultResponse {
+  id: number;
+  student_id: number;
+  organization_id: number;
+  school_id: number;
+  class_id: number;
+  teacher_id?: number | null;
+  exam_name: string;
+  subject: string;
+  marks_obtained: number;
+  total_marks: number;
+  exam_date?: string | null;
+  remarks?: string | null;
+  created_at: string;
+}
+
+export interface ResultCreateData {
+  student_id: number;
+  teacher_id?: number | null;
+  exam_name: string;
+  subject: string;
+  marks_obtained: number;
+  total_marks: number;
+  exam_date?: string | null;
+  remarks?: string | null;
+}
+
+export type ResultUpdateData = Partial<Omit<ResultCreateData, 'student_id'>>;
+
+export interface SalaryResponse {
+  id: number;
+  teacher_id: number;
+  organization_id: number;
+  school_id: number;
+  salary_month: string;
+  amount: number;
+  status: 'paid' | 'unpaid';
+  paid_at?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface SalaryCreateData {
+  teacher_id: number;
+  salary_month: string;
+  amount: number;
+  status: SalaryResponse['status'];
+  notes?: string | null;
+}
+
+export interface SalaryUpdateData {
+  salary_month?: string;
+  amount?: number;
+  status?: SalaryResponse['status'];
+  notes?: string | null;
+}
+
+export interface ExpenseResponse {
+  id: number;
+  organization_id: number;
+  school_id: number;
+  title: string;
+  category: string;
+  expense_date: string;
+  period: 'daily' | 'weekly' | 'monthly';
+  amount: number;
+  vendor?: string | null;
+  payment_method?: string | null;
+  notes?: string | null;
+  created_by_id?: number | null;
+  created_at: string;
+}
+
+export interface ExpenseCreateData {
+  school_id?: number | null;
+  title: string;
+  category: string;
+  expense_date: string;
+  period: ExpenseResponse['period'];
+  amount: number;
+  vendor?: string | null;
+  payment_method?: string | null;
+  notes?: string | null;
+}
+
+export type ExpenseUpdateData = Partial<ExpenseCreateData>;
