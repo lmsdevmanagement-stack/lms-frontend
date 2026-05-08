@@ -1,7 +1,7 @@
 "use client";
 
-import DataTable from "./DataTable";
-import StatsGrid from "./StatsGrid";
+import DataTable from "@/app/components/dashboard/DataTable";
+import StatsGrid from "@/app/components/dashboard/StatsGrid";
 import {
   AdminOverviewProps,
   StudentOverviewProps,

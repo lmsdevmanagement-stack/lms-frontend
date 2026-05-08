@@ -2,11 +2,11 @@
 
 import { LogOut, PanelLeftOpen, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DASHBOARD_NAV_ITEMS } from "../../constants/dashboard";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import type { DashboardSection, UserResponse } from "../../types";
-import type { UserRole } from "../../constants/roles";
+import { DASHBOARD_NAV_ITEMS } from "@/app/constants/dashboard";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import type { DashboardSection, UserResponse } from "@/app/types";
+import type { UserRole } from "@/app/constants/roles";
 
 interface DashboardLayoutProps {
   user: UserResponse | null;

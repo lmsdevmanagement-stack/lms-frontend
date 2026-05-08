@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { API_BASE_URL, API_ENDPOINTS } from '../constants/api';
-import { STORAGE_KEYS } from '../constants/auth';
-import { APP_ROUTES } from '../constants/routes';
+import { API_BASE_URL, API_ENDPOINTS } from '@/app/constants/api';
+import { STORAGE_KEYS } from '@/app/constants/auth';
+import { APP_ROUTES } from '@/app/constants/routes';
 import type {
   ApiResponse,
   ActivityResponse,
@@ -46,7 +46,7 @@ import type {
   WorkCreateData,
   WorkResponse,
   WorkUpdateData,
-} from '../types';
+} from '@/app/types';
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

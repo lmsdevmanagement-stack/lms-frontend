@@ -2,10 +2,10 @@
 
 import { RotateCcw, Save } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { PERMISSION_COLUMNS, PERMISSION_GROUPS, PERMISSION_PAGE_TITLES, type PermissionColumnKey } from '../../constants/permissions';
-import type { DashboardSection } from '../../types';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { PERMISSION_COLUMNS, PERMISSION_GROUPS, PERMISSION_PAGE_TITLES, type PermissionColumnKey } from '@/app/constants/permissions';
+import type { DashboardSection } from '@/app/types';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 
 type PermissionSection = Extract<DashboardSection, 'admin-permissions' | 'teacher-permissions' | 'student-permissions'>;
 type PermissionState = Record<string, Record<PermissionColumnKey, boolean>>;

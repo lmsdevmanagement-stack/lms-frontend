@@ -2,20 +2,20 @@
 
 import { useEffect, useState } from "react";
 
-import DashboardLayout from "./DashboardLayout";
-import DashboardSectionContent from "./DashboardSectionContent";
-import { useDashboardAuth } from "../../hooks/useDashboardAuth";
-import { useDashboardCrud } from "../../hooks/useDashboardCrud";
-import { useMounted } from "../../hooks/useMounted";
-import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
+import DashboardLayout from "@/app/components/dashboard/DashboardLayout";
+import DashboardSectionContent from "@/app/components/dashboard/DashboardSectionContent";
+import DashboardDialogs from "@/app/components/modals/DashboardDialogs";
+import { useDashboardAuth } from "@/app/hooks/useDashboardAuth";
+import { useDashboardCrud } from "@/app/hooks/useDashboardCrud";
+import { useMounted } from "@/app/hooks/useMounted";
+import { Button } from "@/app/components/ui/button";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import type {
   DashboardSection,
   ExpenseRow,
   FeeRow,
   SalaryRow,
-} from "../../types";
-import DashboardDialogs from "./DashboardDialogs";
+} from "@/app/types";
 import {
   DashboardDeleteTarget,
   DashboardPermissionTarget,

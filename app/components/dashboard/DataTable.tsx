@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Skeleton } from '../ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Button } from '../ui/button';
-import type { DataTableColumn } from '../../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/app/components/ui/table';
+import { Button } from '@/app/components/ui/button';
+import type { DataTableColumn } from '@/app/types';
 
 interface DataTableProps<T> {
   title: string;

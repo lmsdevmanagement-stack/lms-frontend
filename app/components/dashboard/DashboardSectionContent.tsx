@@ -1,19 +1,19 @@
 'use client';
 
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
-import DataTable from './DataTable';
-import PermissionsMatrix from './PermissionsMatrix';
-import StatsGrid from './StatsGrid';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Input } from '@/app/components/ui/input';
+import { Badge } from '@/app/components/ui/badge';
+import DataTable from '@/app/components/dashboard/DataTable';
+import PermissionsMatrix from '@/app/components/dashboard/PermissionsMatrix';
+import StatsGrid from '@/app/components/dashboard/StatsGrid';
 import {
   AdminDashboardOverview,
   StudentDashboardOverview,
   SuperAdminDashboardOverview,
   TeacherDashboardOverview,
-} from './DashboardOverviews';
-import type { DashboardCrud } from '../../hooks/useDashboardCrud';
+} from '@/app/components/dashboard/DashboardOverviews';
+import type { DashboardCrud } from '@/app/hooks/useDashboardCrud';
 import type {
   ActivityResponse,
   AttendanceRow,
@@ -32,7 +32,7 @@ import type {
   TeacherRow,
   WorkRow,
   UserResponse,
-} from '../../types';
+} from '@/app/types';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface DashboardSectionContentProps {

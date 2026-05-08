@@ -4,12 +4,12 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { GraduationCap, Loader2 } from 'lucide-react';
-import { APP_ROUTES } from '../constants/routes';
-import { clearError, login } from '../redux/slices/authSlice';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import Input from './Input';
-import type { AppDispatch, RootState } from '../redux/store';
+import { APP_ROUTES } from '@/app/constants/routes';
+import { clearError, login } from '@/app/redux/slices/authSlice';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import Input from '@/app/components/Input';
+import type { AppDispatch, RootState } from '@/app/redux/store';
 
 interface LoginFormData {
   email: string;

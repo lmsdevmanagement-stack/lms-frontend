@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { APP_ROUTES } from '../constants/routes';
-import { USER_ROLES } from '../constants/roles';
-import { getCurrentUser, logout } from '../redux/slices/authSlice';
-import type { AppDispatch, RootState } from '../redux/store';
+import { APP_ROUTES } from '@/app/constants/routes';
+import { USER_ROLES } from '@/app/constants/roles';
+import { getCurrentUser, logout } from '@/app/redux/slices/authSlice';
+import type { AppDispatch, RootState } from '@/app/redux/store';
 
 export function useDashboardAuth() {
   const { user, role, isAuthenticated } = useSelector((state: RootState) => state.auth);
