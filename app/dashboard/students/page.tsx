@@ -1,4 +1,4 @@
-import DashboardView from '../../components/dashboard/DashboardView';
+import DashboardView from '@/app/components/dashboard/DashboardView';
 
 export default function StudentsPage() {
   return <DashboardView initialSection="students" />;

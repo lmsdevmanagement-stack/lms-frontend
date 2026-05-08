@@ -1,6 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import type React from 'react';
 import type { UserRole } from '../constants/roles';
+import { DashboardCrud } from '../hooks/useDashboardCrud';
+import { ActivityResponse } from './activities';
 
 export interface NavigationItem {
   id: DashboardSection;
@@ -222,4 +224,56 @@ export interface DataTableColumn<T> {
   header: string;
   cell: (row: T) => React.ReactNode;
   className?: string;
+}
+
+
+export type DashboardDeleteTarget =
+  | { type: 'school'; row: SchoolRow }
+  | { type: 'class'; row: ClassRow }
+  | { type: 'school-admin'; row: SchoolAdminRow }
+  | { type: 'teacher'; row: TeacherRow }
+  | { type: 'student'; row: StudentRow };
+
+export type DashboardPermissionTarget =
+  | ({ type: 'school-admin'; row: SchoolAdminRow } & Pick<SchoolAdminRow, 'name' | 'school' | 'email' | 'permissions'>)
+  | ({ type: 'teacher'; row: TeacherRow } & Pick<TeacherRow, 'name' | 'school' | 'email' | 'permissions'>)
+  | ({ type: 'student'; row: StudentRow } & Pick<StudentRow, 'name' | 'school' | 'email' | 'permissions'>);
+
+ export interface DashboardDialogsProps {
+  crud: DashboardCrud;
+  deleteTarget: DashboardDeleteTarget | null;
+  setDeleteTarget: React.Dispatch<React.SetStateAction<DashboardDeleteTarget | null>>;
+  permissionTarget: DashboardPermissionTarget | null;
+  setPermissionTarget: React.Dispatch<React.SetStateAction<DashboardPermissionTarget | null>>;
+}
+
+interface OverviewProps {
+  crud: DashboardCrud;
+  stats: StatCard[];
+}
+
+export interface SuperAdminOverviewProps extends OverviewProps {
+  schoolColumns: DataTableColumn<SchoolRow>[];
+  schoolAdminColumns: DataTableColumn<SchoolAdminRow>[];
+  activityColumns: DataTableColumn<ActivityResponse>[];
+}
+
+export interface AdminOverviewProps extends OverviewProps {
+  teacherColumns: DataTableColumn<TeacherRow>[];
+  classColumns: DataTableColumn<ClassRow>[];
+  studentColumns: DataTableColumn<StudentRow>[];
+}
+
+export interface TeacherOverviewProps extends OverviewProps {
+  classColumns: DataTableColumn<ClassRow>[];
+  studentColumns: DataTableColumn<StudentRow>[];
+  attendanceColumns: DataTableColumn<AttendanceRow>[];
+  scheduleColumns: DataTableColumn<ScheduleRow>[];
+}
+
+export interface StudentOverviewProps extends OverviewProps {
+  attendanceColumns: DataTableColumn<AttendanceRow>[];
+  feeColumns: DataTableColumn<FeeRow>[];
+  resultColumns: DataTableColumn<ResultRow>[];
+  classColumns: DataTableColumn<ClassRow>[];
 }

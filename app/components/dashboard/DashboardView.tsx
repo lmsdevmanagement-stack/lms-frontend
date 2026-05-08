@@ -1,416 +1,82 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import DashboardLayout from './DashboardLayout';
-import DataTable from './DataTable';
-import PermissionsMatrix from './PermissionsMatrix';
-import StatsGrid from './StatsGrid';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
-import { Modal } from '../ui/modal';
-import { Skeleton } from '../ui/skeleton';
-import { useDashboardAuth } from '../../hooks/useDashboardAuth';
-import { useDashboardCrud } from '../../hooks/useDashboardCrud';
-import { useMounted } from '../../hooks/useMounted';
-import type { ActivityResponse, AttendanceRow, ClassRow, DashboardSection, DataTableColumn, ExpenseRow, FeeRow, ResultRow, SalaryRow, ScheduleRow, SchoolAdminRow, SchoolRow, StatCard, StudentRow, TeacherRow, WorkRow } from '../../types';
+import { useEffect, useState } from "react";
+
+import DashboardLayout from "./DashboardLayout";
+import DashboardSectionContent from "./DashboardSectionContent";
+import { useDashboardAuth } from "../../hooks/useDashboardAuth";
+import { useDashboardCrud } from "../../hooks/useDashboardCrud";
+import { useMounted } from "../../hooks/useMounted";
+import { Button } from "../ui/button";
+import { Skeleton } from "../ui/skeleton";
+import type {
+  DashboardSection,
+  ExpenseRow,
+  FeeRow,
+  SalaryRow,
+} from "../../types";
+import DashboardDialogs from "./DashboardDialogs";
+import {
+  DashboardDeleteTarget,
+  DashboardPermissionTarget,
+} from "@/app/types/dashboard";
 
 interface DashboardViewProps {
   initialSection?: DashboardSection;
 }
 
-const statusVariant = {
-  active: 'success',
-  blocked: 'destructive',
-  trial: 'warning',
-  present: 'success',
-  absent: 'destructive',
-  late: 'warning',
-  excused: 'secondary',
-  paid: 'success',
-  unpaid: 'warning',
-} as const;
-
-export default function DashboardView({ initialSection = 'overview' }: DashboardViewProps) {
+export default function DashboardView({
+  initialSection = "overview",
+}: DashboardViewProps) {
   const mounted = useMounted();
-  const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [attendanceDateFilter, setAttendanceDateFilter] = useState('');
+  const [activeSection, setActiveSection] =
+    useState<DashboardSection>(initialSection);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [attendanceDateFilter, setAttendanceDateFilter] = useState("");
   const [attendanceClassFilter, setAttendanceClassFilter] = useState(0);
   const [attendanceSchoolFilter, setAttendanceSchoolFilter] = useState(0);
-  const [feeMonthFilter, setFeeMonthFilter] = useState('');
-  const [feeStatusFilter, setFeeStatusFilter] = useState<'all' | FeeRow['status']>('all');
+  const [feeMonthFilter, setFeeMonthFilter] = useState("");
+  const [feeStatusFilter, setFeeStatusFilter] = useState<
+    "all" | FeeRow["status"]
+  >("all");
   const [feeClassFilter, setFeeClassFilter] = useState(0);
-  const [salaryMonthFilter, setSalaryMonthFilter] = useState('');
-  const [salaryStatusFilter, setSalaryStatusFilter] = useState<'all' | SalaryRow['status']>('all');
-  const [expenseDateFilter, setExpenseDateFilter] = useState('');
-  const [expensePeriodFilter, setExpensePeriodFilter] = useState<'all' | ExpenseRow['period']>('all');
+  const [salaryMonthFilter, setSalaryMonthFilter] = useState("");
+  const [salaryStatusFilter, setSalaryStatusFilter] = useState<
+    "all" | SalaryRow["status"]
+  >("all");
+  const [expenseDateFilter, setExpenseDateFilter] = useState("");
+  const [expensePeriodFilter, setExpensePeriodFilter] = useState<
+    "all" | ExpenseRow["period"]
+  >("all");
   const [expenseSchoolFilter, setExpenseSchoolFilter] = useState(0);
-  const [deleteTarget, setDeleteTarget] = useState<
-    | { type: 'school'; row: SchoolRow }
-    | { type: 'class'; row: ClassRow }
-    | { type: 'school-admin'; row: SchoolAdminRow }
-    | { type: 'teacher'; row: TeacherRow }
-    | { type: 'student'; row: StudentRow }
-    | null
-  >(null);
-  const [permissionTarget, setPermissionTarget] = useState<
-    | ({ type: 'school-admin'; row: SchoolAdminRow } & Pick<SchoolAdminRow, 'name' | 'school' | 'email' | 'permissions'>)
-    | ({ type: 'teacher'; row: TeacherRow } & Pick<TeacherRow, 'name' | 'school' | 'email' | 'permissions'>)
-    | ({ type: 'student'; row: StudentRow } & Pick<StudentRow, 'name' | 'school' | 'email' | 'permissions'>)
-    | null
-  >(null);
-  const { user, role, isAuthenticated, isSuperAdmin, organizationId, schoolId, handleLogout } = useDashboardAuth();
-  const isTeacher = role === 'teacher';
-  const isStudent = role === 'student';
-  const isAdminUser = isSuperAdmin || role === 'admin';
-  const crud = useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searchTerm, enabled: isAuthenticated, currentUser: user });
+  const [deleteTarget, setDeleteTarget] =
+    useState<DashboardDeleteTarget | null>(null);
+  const [permissionTarget, setPermissionTarget] =
+    useState<DashboardPermissionTarget | null>(null);
+  const {
+    user,
+    role,
+    isAuthenticated,
+    isSuperAdmin,
+    organizationId,
+    schoolId,
+    handleLogout,
+  } = useDashboardAuth();
+  const isTeacher = role === "teacher";
+  const isStudent = role === "student";
+  const isAdminUser = isSuperAdmin || role === "admin";
+  const crud = useDashboardCrud({
+    isSuperAdmin,
+    organizationId,
+    schoolId,
+    searchTerm,
+    enabled: isAuthenticated,
+    currentUser: user,
+  });
 
   useEffect(() => {
     setActiveSection(initialSection);
   }, [initialSection]);
-  const stats: StatCard[] = isSuperAdmin ? [
-    { label: 'Schools', value: String(crud.schools.length), description: 'All managed schools' },
-    { label: 'School Admins', value: String(crud.schoolAdmins.length), description: 'Admins assigned to schools' },
-    { label: 'Expenses', value: '0', description: 'Expense module pending backend' },
-    {
-      label: 'Blocked',
-      value: String([...crud.schools, ...crud.schoolAdmins].filter((row) => row.status === 'blocked').length),
-      description: 'Inactive records',
-    },
-  ] : isTeacher ? [
-    { label: 'Assigned Classes', value: String(crud.classes.length), description: 'Classes assigned to you' },
-    { label: 'Assigned Students', value: String(crud.students.length), description: 'Students in your classes' },
-    { label: 'Salary', value: `Rs ${(user?.salary || 0).toLocaleString()}`, description: 'Your salary record' },
-    { label: 'Attendance Records', value: String(crud.attendance.length), description: 'Recorded classroom attendance' },
-    { label: 'Present', value: String(crud.attendance.filter((row) => row.status === 'present').length), description: 'Present attendance entries' },
-  ] : isStudent ? [
-    { label: 'Attendance', value: `${crud.attendance.filter((row) => row.status === 'present').length}/${crud.attendance.length}`, description: 'Present over recorded attendance' },
-    { label: 'Paid Fees', value: String(crud.fees.filter((row) => row.status === 'paid').length), description: 'Paid monthly fee records' },
-    { label: 'Unpaid Fees', value: String(crud.fees.filter((row) => row.status === 'unpaid').length), description: 'Pending monthly fee records' },
-    { label: 'Marks', value: String(crud.results.length), description: 'Published marks and tests' },
-    { label: 'Class', value: crud.classes[0]?.name || 'Unassigned', description: crud.classes[0]?.section || 'Class assignment' },
-  ] : [
-    { label: 'Teachers', value: String(crud.teachers.length), description: 'Your school teachers' },
-    { label: 'Students', value: String(crud.students.length), description: 'Your school students' },
-    { label: 'Classes', value: String(crud.classes.length), description: 'Managed student classes' },
-    {
-      label: 'Blocked',
-      value: String([...crud.teachers, ...crud.students].filter((row) => row.status === 'blocked').length),
-      description: 'Inactive records',
-    },
-  ];
-
-  const schoolColumns: DataTableColumn<SchoolRow>[] = [
-    { key: 'name', header: 'School', cell: (row) => <span className="font-medium text-slate-950">{row.name}</span> },
-    { key: 'admin', header: 'Admin', cell: (row) => row.admin },
-    { key: 'teachers', header: 'Teachers', cell: (row) => row.teachers },
-    { key: 'students', header: 'Students', cell: (row) => row.students },
-    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openCreateSchoolAdminModal(row)}>Add Admin</Button>
-          <Button variant="ghost" onClick={() => crud.openEditSchoolModal(row)}>Edit</Button>
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleSchoolBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
-          <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'school', row })}>Delete</Button>
-        </div>
-      ),
-      className: 'text-right',
-    },
-  ];
-
-  const teacherColumns: DataTableColumn<TeacherRow>[] = [
-    {
-      key: 'name',
-      header: 'Teacher',
-      cell: (row) => (
-        <div>
-          <p className="font-medium text-slate-950">{row.name}</p>
-          <p className="text-xs text-slate-500">{row.email}</p>
-        </div>
-      ),
-    },
-    { key: 'school', header: 'School', cell: (row) => row.school },
-    { key: 'subject', header: 'Subject', cell: (row) => row.subject },
-    { key: 'experience', header: 'Experience', cell: (row) => row.experience || 'Not set' },
-    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setPermissionTarget({ type: 'teacher', row, name: row.name, school: row.school, email: row.email, permissions: row.permissions })}>Permissions</Button>
-          <Button variant="ghost">Password</Button>
-          <Button variant="ghost" onClick={() => crud.openEditTeacherModal(row)}>Edit</Button>
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleTeacherBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
-          <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'teacher', row })}>Delete</Button>
-        </div>
-      ),
-      className: 'text-right',
-    },
-  ];
-
-  const classColumns: DataTableColumn<ClassRow>[] = [
-    { key: 'name', header: 'Class', cell: (row) => <span className="font-medium text-slate-950">{row.section ? `${row.name} - ${row.section}` : row.name}</span> },
-    { key: 'school', header: 'School', cell: (row) => row.school },
-    { key: 'teacher', header: 'Teacher', cell: (row) => crud.teachers.find((teacher) => teacher.id === row.teacherId)?.name || 'Unassigned' },
-    { key: 'students', header: 'Students', cell: (row) => row.students },
-    { key: 'description', header: 'Details', cell: (row) => row.description || 'No details' },
-    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex justify-end gap-2">
-          {!isTeacher && !isStudent && (
-            <>
-          <Button variant="ghost" onClick={() => crud.openEditClassModal(row)}>Edit</Button>
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleClassBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
-          <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'class', row })}>Delete</Button>
-            </>
-          )}
-        </div>
-      ),
-      className: 'text-right',
-    },
-  ];
-
-  const schoolAdminColumns: DataTableColumn<SchoolAdminRow>[] = [
-    {
-      key: 'name',
-      header: 'Admin',
-      cell: (row) => (
-        <div>
-          <p className="font-medium text-slate-950">{row.name}</p>
-          <p className="text-xs text-slate-500">{row.email}</p>
-        </div>
-      ),
-    },
-    { key: 'school', header: 'School', cell: (row) => row.school },
-    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setPermissionTarget({ type: 'school-admin', row, name: row.name, school: row.school, email: row.email, permissions: row.permissions })}>Permissions</Button>
-          <Button variant="ghost" onClick={() => crud.openEditSchoolAdminModal(row)}>Edit</Button>
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleSchoolAdminBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
-          <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'school-admin', row })}>Delete</Button>
-        </div>
-      ),
-      className: 'text-right',
-    },
-  ];
-
-  const studentColumns: DataTableColumn<StudentRow>[] = [
-    {
-      key: 'name',
-      header: 'Student',
-      cell: (row) => (
-        <div>
-          <p className="font-medium text-slate-950">{row.name}</p>
-          <p className="text-xs text-slate-500">{row.email}</p>
-        </div>
-      ),
-    },
-    { key: 'school', header: 'School', cell: (row) => row.school },
-    { key: 'className', header: 'Class', cell: (row) => row.className },
-    { key: 'rollNumber', header: 'Roll No.', cell: (row) => row.rollNumber || 'Not set' },
-    { key: 'fatherName', header: 'Father', cell: (row) => row.fatherName || 'Not set' },
-    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex justify-end gap-2">
-          {!isTeacher && !isStudent && (
-            <>
-          <Button variant="ghost" onClick={() => setPermissionTarget({ type: 'student', row, name: row.name, school: row.school, email: row.email, permissions: row.permissions })}>Permissions</Button>
-          <Button variant="ghost">Password</Button>
-          <Button variant="ghost" onClick={() => crud.openEditStudentModal(row)}>Edit</Button>
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.toggleStudentBlock(row)}>{row.status === 'blocked' ? 'Unblock' : 'Block'}</Button>
-          <Button variant="destructive" disabled={crud.saving} onClick={() => setDeleteTarget({ type: 'student', row })}>Delete</Button>
-            </>
-          )}
-        </div>
-      ),
-      className: 'text-right',
-    },
-  ];
-
-  const attendanceRows = crud.attendance.filter((row) => {
-    if (attendanceDateFilter && row.date !== attendanceDateFilter) return false;
-    if (attendanceClassFilter && row.classId !== attendanceClassFilter) return false;
-    if (attendanceSchoolFilter && row.schoolId !== attendanceSchoolFilter) return false;
-    return true;
-  });
-  const attendanceColumns: DataTableColumn<AttendanceRow>[] = [
-    { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
-    { key: 'date', header: 'Date', cell: (row) => row.date },
-    { key: 'className', header: 'Class', cell: (row) => row.className },
-    { key: 'school', header: 'School', cell: (row) => row.school },
-    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    { key: 'notes', header: 'Notes', cell: (row) => row.notes || 'No notes' },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => isStudent
-        ? <span className="text-xs text-slate-500">Read only</span>
-        : <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditAttendanceModal(row)}>Override</Button>,
-      className: 'text-right',
-    },
-  ];
-
-  const feeRows = crud.fees.filter((row) => {
-    if (feeMonthFilter && row.month !== feeMonthFilter) return false;
-    if (feeClassFilter && row.classId !== feeClassFilter) return false;
-    if (feeStatusFilter !== 'all' && row.status !== feeStatusFilter) return false;
-    return true;
-  });
-  const feePaidTotal = feeRows.filter((row) => row.status === 'paid').reduce((total, row) => total + row.amount, 0);
-  const feeUnpaidTotal = feeRows.filter((row) => row.status === 'unpaid').reduce((total, row) => total + row.amount, 0);
-  const feeSummaryStats: StatCard[] = [
-    { label: 'Collected', value: `Rs ${feePaidTotal.toLocaleString()}`, description: `${feeRows.filter((row) => row.status === 'paid').length} paid records` },
-    { label: 'Pending', value: `Rs ${feeUnpaidTotal.toLocaleString()}`, description: `${feeRows.filter((row) => row.status === 'unpaid').length} unpaid records` },
-    { label: 'Class Records', value: String(feeRows.length), description: feeClassFilter ? 'Filtered class fee rows' : 'All visible fee rows' },
-  ];
-  const feeColumns: DataTableColumn<FeeRow>[] = [
-    { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
-    { key: 'month', header: 'Month', cell: (row) => row.month },
-    { key: 'className', header: 'Class', cell: (row) => row.className },
-    { key: 'amount', header: 'Amount', cell: (row) => `Rs ${row.amount.toLocaleString()}` },
-    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex justify-end gap-2">
-          {isStudent ? (
-            <span className="text-xs text-slate-500">Read only</span>
-          ) : (
-            <>
-              <Button variant="ghost" disabled={crud.saving} onClick={() => crud.updateFeeStatus(row, row.status === 'paid' ? 'unpaid' : 'paid')}>
-                Mark {row.status === 'paid' ? 'Unpaid' : 'Paid'}
-              </Button>
-              <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditFeeModal(row)}>Edit</Button>
-            </>
-          )}
-        </div>
-      ),
-      className: 'text-right',
-    },
-  ];
-
-  const scheduleColumns: DataTableColumn<ScheduleRow>[] = [
-    { key: 'subject', header: 'Subject', cell: (row) => <span className="font-medium text-slate-950">{row.subject}</span> },
-    { key: 'className', header: 'Class', cell: (row) => row.className },
-    { key: 'teacher', header: 'Teacher', cell: (row) => row.teacher },
-    { key: 'weekday', header: 'Day', cell: (row) => row.weekday },
-    { key: 'time', header: 'Time', cell: (row) => `${row.startTime || '-'} - ${row.endTime || '-'}` },
-    { key: 'actions', header: 'Actions', cell: (row) => isStudent ? <span className="text-xs text-slate-500">Read only</span> : <Button variant="ghost" onClick={() => crud.openEditScheduleModal(row)}>Edit</Button>, className: 'text-right' },
-  ];
-
-  const workColumns: DataTableColumn<WorkRow>[] = [
-    { key: 'title', header: 'Work', cell: (row) => <span className="font-medium text-slate-950">{row.title}</span> },
-    { key: 'className', header: 'Class', cell: (row) => row.className },
-    { key: 'teacher', header: 'Teacher', cell: (row) => row.teacher },
-    { key: 'dueDate', header: 'Due Date', cell: (row) => row.dueDate || 'No due date' },
-    { key: 'description', header: 'Details', cell: (row) => row.description || 'No details' },
-    { key: 'actions', header: 'Actions', cell: (row) => isStudent ? <span className="text-xs text-slate-500">Read only</span> : <Button variant="ghost" onClick={() => crud.openEditWorkModal(row)}>Edit</Button>, className: 'text-right' },
-  ];
-
-  const resultColumns: DataTableColumn<ResultRow>[] = [
-    { key: 'student', header: 'Student', cell: (row) => <span className="font-medium text-slate-950">{row.student}</span> },
-    { key: 'examName', header: 'Exam', cell: (row) => row.examName },
-    { key: 'subject', header: 'Subject', cell: (row) => row.subject },
-    { key: 'marks', header: 'Marks', cell: (row) => `${row.marksObtained}/${row.totalMarks}` },
-    { key: 'examDate', header: 'Date', cell: (row) => row.examDate || 'No date' },
-    { key: 'actions', header: 'Actions', cell: (row) => isStudent ? <span className="text-xs text-slate-500">Read only</span> : <Button variant="ghost" onClick={() => crud.openEditResultModal(row)}>Edit</Button>, className: 'text-right' },
-  ];
-
-  const salaryRows = crud.salaries.filter((row) => {
-    if (salaryMonthFilter && row.month !== salaryMonthFilter) return false;
-    if (salaryStatusFilter !== 'all' && row.status !== salaryStatusFilter) return false;
-    return true;
-  });
-  const salaryPaidTotal = salaryRows.filter((row) => row.status === 'paid').reduce((total, row) => total + row.amount, 0);
-  const salaryUnpaidTotal = salaryRows.filter((row) => row.status === 'unpaid').reduce((total, row) => total + row.amount, 0);
-  const salarySummaryStats: StatCard[] = [
-    { label: 'Salary Paid', value: `Rs ${salaryPaidTotal.toLocaleString()}`, description: `${salaryRows.filter((row) => row.status === 'paid').length} paid salary records` },
-    { label: 'Salary Pending', value: `Rs ${salaryUnpaidTotal.toLocaleString()}`, description: `${salaryRows.filter((row) => row.status === 'unpaid').length} unpaid salary records` },
-    { label: 'Teachers', value: String(new Set(salaryRows.map((row) => row.teacherId)).size), description: 'Teachers in filtered salary records' },
-  ];
-  const salaryColumns: DataTableColumn<SalaryRow>[] = [
-    { key: 'teacher', header: 'Teacher', cell: (row) => <span className="font-medium text-slate-950">{row.teacher}</span> },
-    { key: 'school', header: 'School', cell: (row) => row.school },
-    { key: 'month', header: 'Month', cell: (row) => row.month },
-    { key: 'amount', header: 'Amount', cell: (row) => `Rs ${row.amount.toLocaleString()}` },
-    { key: 'status', header: 'Status', cell: (row) => <Badge variant={statusVariant[row.status]}>{row.status}</Badge> },
-    { key: 'paidAt', header: 'Paid At', cell: (row) => row.paidAt ? new Date(row.paidAt).toLocaleDateString() : '-' },
-    {
-      key: 'actions',
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.updateSalaryStatus(row, row.status === 'paid' ? 'unpaid' : 'paid')}>
-            Mark {row.status === 'paid' ? 'Unpaid' : 'Paid'}
-          </Button>
-          <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditSalaryModal(row)}>Edit</Button>
-        </div>
-      ),
-      className: 'text-right',
-    },
-  ];
-
-  const expenseRows = crud.expenses.filter((row) => {
-    if (expenseDateFilter && row.date !== expenseDateFilter) return false;
-    if (expensePeriodFilter !== 'all' && row.period !== expensePeriodFilter) return false;
-    if (expenseSchoolFilter && row.schoolId !== expenseSchoolFilter) return false;
-    return true;
-  });
-  const expenseTotal = expenseRows.reduce((total, row) => total + row.amount, 0);
-  const expenseSummaryStats: StatCard[] = [
-    { label: 'Total Expenses', value: `Rs ${expenseTotal.toLocaleString()}`, description: `${expenseRows.length} filtered records` },
-    { label: 'Daily', value: `Rs ${expenseRows.filter((row) => row.period === 'daily').reduce((total, row) => total + row.amount, 0).toLocaleString()}`, description: 'Daily expense total' },
-    { label: 'Monthly', value: `Rs ${expenseRows.filter((row) => row.period === 'monthly').reduce((total, row) => total + row.amount, 0).toLocaleString()}`, description: 'Monthly expense total' },
-  ];
-  const expenseColumns: DataTableColumn<ExpenseRow>[] = [
-    { key: 'title', header: 'Expense', cell: (row) => <span className="font-medium text-slate-950">{row.title}</span> },
-    { key: 'date', header: 'Date', cell: (row) => row.date },
-    { key: 'period', header: 'Period', cell: (row) => <Badge variant="secondary">{row.period}</Badge> },
-    { key: 'category', header: 'Category', cell: (row) => row.category },
-    { key: 'school', header: 'School', cell: (row) => row.school },
-    { key: 'amount', header: 'Amount', cell: (row) => `Rs ${row.amount.toLocaleString()}` },
-    { key: 'vendor', header: 'Vendor', cell: (row) => row.vendor || '-' },
-    { key: 'paymentMethod', header: 'Payment', cell: (row) => row.paymentMethod || '-' },
-    { key: 'actions', header: 'Actions', cell: (row) => <Button variant="ghost" disabled={crud.saving} onClick={() => crud.openEditExpenseModal(row)}>Edit</Button>, className: 'text-right' },
-  ];
-
-  const activityColumns: DataTableColumn<ActivityResponse>[] = [
-    {
-      key: 'description',
-      header: 'Activity',
-      cell: (row) => (
-        <div>
-          <p className="font-medium text-slate-950">{row.description}</p>
-          <p className="text-xs text-slate-500">{row.actor_name} · {row.actor_role.replace('_', ' ')}</p>
-        </div>
-      ),
-    },
-    { key: 'action', header: 'Action', cell: (row) => <Badge variant="secondary">{row.action}</Badge> },
-    { key: 'entity_type', header: 'Entity', cell: (row) => row.entity_type },
-    {
-      key: 'created_at',
-      header: 'Time',
-      cell: (row) => new Date(row.created_at).toLocaleString(),
-      className: 'whitespace-nowrap',
-    },
-  ];
 
   if (!mounted) {
     return (
@@ -429,246 +95,6 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
 
   if (!isAuthenticated) return null;
 
-  const renderSection = () => {
-    if (activeSection === 'schools') {
-      return <DataTable title="Organizations / Schools" description="Create, edit, block, and delete schools." columns={schoolColumns} data={crud.schools} loading={crud.loading} />;
-    }
-    if (activeSection === 'school-admins') {
-      return <DataTable title="School Admins" description="Create, edit, block, and delete school-scoped admins." columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />;
-    }
-    if (activeSection === 'activities') {
-      return <DataTable title="User Activities" description="Track login, school, admin, teacher, and student changes across the platform." columns={activityColumns} data={crud.activities} loading={crud.loading} />;
-    }
-    if (activeSection === 'expenses') {
-      return (
-        <div className="space-y-4">
-          <StatsGrid stats={expenseSummaryStats} />
-          <Card>
-            <CardContent className="grid gap-3 p-4 md:grid-cols-3">
-              <Input type="date" value={expenseDateFilter} onChange={(event) => setExpenseDateFilter(event.target.value)} />
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expensePeriodFilter} onChange={(event) => setExpensePeriodFilter(event.target.value as 'all' | ExpenseRow['period'])}>
-                <option value="all">All periods</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expenseSchoolFilter} onChange={(event) => setExpenseSchoolFilter(Number(event.target.value))}>
-                <option value={0}>All schools</option>
-                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-              </select>
-            </CardContent>
-          </Card>
-          <DataTable title="Expenses" description="Record daily, weekly, or monthly school expenses and review totals." columns={expenseColumns} data={expenseRows} loading={crud.loading} />
-        </div>
-      );
-    }
-    if (activeSection === 'admin-permissions') {
-      return <PermissionsMatrix section="admin-permissions" />;
-    }
-    if (activeSection === 'teachers') {
-      return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
-    }
-    if (activeSection === 'classes') {
-      return <DataTable title={isStudent ? 'Class & Subject Info' : 'Classes'} description={isStudent ? 'Your class details and assigned teacher.' : 'Create, edit, block, and assign student classes.'} columns={classColumns} data={crud.classes} loading={crud.loading} />;
-    }
-    if (activeSection === 'students') {
-      return <DataTable title="Students" description="Create, edit, delete, block, and reset student access." columns={studentColumns} data={crud.students} loading={crud.loading} />;
-    }
-    if (activeSection === 'attendance') {
-      return (
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="grid gap-3 p-4 md:grid-cols-3">
-              <Input type="date" value={attendanceDateFilter} onChange={(event) => setAttendanceDateFilter(event.target.value)} />
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={attendanceClassFilter} onChange={(event) => setAttendanceClassFilter(Number(event.target.value))}>
-                <option value={0}>All classes</option>
-                {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
-              </select>
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={attendanceSchoolFilter} onChange={(event) => setAttendanceSchoolFilter(Number(event.target.value))}>
-                <option value={0}>All schools</option>
-                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-              </select>
-            </CardContent>
-          </Card>
-          <DataTable title="Attendance" description={isStudent ? 'Your daily attendance and date-wise history.' : 'View and override attendance by date, class, or school.'} columns={attendanceColumns} data={attendanceRows} loading={crud.loading} />
-        </div>
-      );
-    }
-    if (activeSection === 'fees') {
-      return (
-        <div className="space-y-4">
-          {!isStudent && <StatsGrid stats={feeSummaryStats} />}
-          <Card>
-            <CardContent className="grid gap-3 p-4 md:grid-cols-3">
-              <Input type="month" value={feeMonthFilter} onChange={(event) => setFeeMonthFilter(event.target.value)} />
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={feeClassFilter} onChange={(event) => setFeeClassFilter(Number(event.target.value))}>
-                <option value={0}>All classes</option>
-                {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
-              </select>
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={feeStatusFilter} onChange={(event) => setFeeStatusFilter(event.target.value as 'all' | FeeRow['status'])}>
-                <option value="all">All statuses</option>
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
-              </select>
-            </CardContent>
-          </Card>
-          <DataTable title="Fees" description={isStudent ? 'Your monthly fee breakdown and paid/unpaid status.' : 'Assign monthly fees, update payment status, and track student payments.'} columns={feeColumns} data={feeRows} loading={crud.loading} />
-        </div>
-      );
-    }
-    if (activeSection === 'salaries') {
-      return (
-        <div className="space-y-4">
-          <StatsGrid stats={salarySummaryStats} />
-          <Card>
-            <CardContent className="grid gap-3 p-4 md:grid-cols-2">
-              <Input type="month" value={salaryMonthFilter} onChange={(event) => setSalaryMonthFilter(event.target.value)} />
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={salaryStatusFilter} onChange={(event) => setSalaryStatusFilter(event.target.value as 'all' | SalaryRow['status'])}>
-                <option value="all">All statuses</option>
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
-              </select>
-            </CardContent>
-          </Card>
-          <DataTable title="Teacher Salaries" description="Assign salary records, update paid/unpaid status, and track salary totals." columns={salaryColumns} data={salaryRows} loading={crud.loading} />
-        </div>
-      );
-    }
-    if (activeSection === 'schedule') {
-      return <DataTable title="Class Schedule" description={isStudent ? 'Your class schedule.' : 'Manage class-wise schedules.'} columns={scheduleColumns} data={crud.schedules} loading={crud.loading} />;
-    }
-    if (activeSection === 'work') {
-      return <DataTable title="Class Work" description={isStudent ? 'Your assigned class work.' : 'Manage class work for assigned classes.'} columns={workColumns} data={crud.work} loading={crud.loading} />;
-    }
-    if (activeSection === 'results') {
-      return <DataTable title="Marks & Results" description={isStudent ? 'Your marks and test history.' : 'Add and update student marks.'} columns={resultColumns} data={crud.results} loading={crud.loading} />;
-    }
-    if (activeSection === 'reports') {
-      const reportStats: StatCard[] = [
-        { label: isStudent ? 'Student' : 'Total Students', value: isStudent ? (user?.full_name || 'Student') : String(crud.report?.total_students || 0), description: isStudent ? 'Academic overview' : 'Active student accounts' },
-        { label: 'Teachers', value: String(crud.report?.total_teachers || 0), description: isStudent ? 'Assigned academic support' : 'Active teacher accounts' },
-        { label: 'Attendance', value: `${crud.report?.attendance_present || 0}/${(crud.report?.attendance_present || 0) + (crud.report?.attendance_absent || 0) + (crud.report?.attendance_late || 0)}`, description: 'Present over recorded attendance' },
-        { label: 'Fees Paid', value: `Rs ${(crud.report?.fee_paid_amount || 0).toLocaleString()}`, description: `${crud.report?.fee_unpaid || 0} unpaid records` },
-      ];
-      return <StatsGrid stats={reportStats} />;
-    }
-    if (activeSection === 'organization-settings') {
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle>Organization Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <Input value={crud.organizationSettingsForm.name} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, name: event.target.value })} placeholder="Organization name" />
-            <Input value={crud.organizationSettingsForm.slug} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, slug: event.target.value })} placeholder="Slug" />
-            <Input value={crud.organizationSettingsForm.contactEmail} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, contactEmail: event.target.value })} placeholder="Contact email" />
-            <Input value={crud.organizationSettingsForm.phone} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, phone: event.target.value })} placeholder="Phone" />
-            <Input value={crud.organizationSettingsForm.address} onChange={(event) => crud.setOrganizationSettingsForm({ ...crud.organizationSettingsForm, address: event.target.value })} placeholder="Address" />
-            <div className="flex justify-end">
-              <Button disabled={crud.saving || !crud.organization} onClick={crud.saveOrganizationSettings}>{crud.saving ? 'Saving...' : 'Save Settings'}</Button>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-    if (activeSection === 'profile') {
-      return (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <Input value={crud.profileForm.fullName} onChange={(event) => crud.setProfileForm({ ...crud.profileForm, fullName: event.target.value })} placeholder="Full name" />
-              <Input type="email" value={crud.profileForm.email} onChange={(event) => crud.setProfileForm({ ...crud.profileForm, email: event.target.value })} placeholder="Email" />
-              <div className="flex justify-end">
-                <Button disabled={crud.saving || !crud.profileForm.fullName || !crud.profileForm.email} onClick={crud.saveMyProfile}>{crud.saving ? 'Saving...' : 'Save Profile'}</Button>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Password</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <Input type="password" value={crud.profileForm.currentPassword} onChange={(event) => crud.setProfileForm({ ...crud.profileForm, currentPassword: event.target.value })} placeholder="Current password" />
-              <Input type="password" value={crud.profileForm.newPassword} onChange={(event) => crud.setProfileForm({ ...crud.profileForm, newPassword: event.target.value })} placeholder="New password" />
-              <div className="flex justify-end">
-                <Button disabled={crud.saving || !crud.profileForm.currentPassword || !crud.profileForm.newPassword} onClick={crud.saveMyPassword}>{crud.saving ? 'Saving...' : 'Change Password'}</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-    if (activeSection === 'access-control') {
-      return (
-        <div className="space-y-6">
-          <DataTable title="Teacher Access" description="Assign permissions for attendance, fees, reports, and other modules." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
-          <DataTable title="Student Access" description="Control student access to attendance, fees, and reports." columns={studentColumns} data={crud.students} loading={crud.loading} />
-        </div>
-      );
-    }
-    if (activeSection === 'teacher-permissions' || activeSection === 'student-permissions') {
-      return <PermissionsMatrix section={activeSection} />;
-    }
-
-    return (
-      <div className="space-y-6">
-        <StatsGrid stats={stats} />
-        {isSuperAdmin ? (
-          <>
-            <DataTable title="Organizations / Schools" columns={schoolColumns} data={crud.schools} loading={crud.loading} />
-            <DataTable title="School Admins" columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />
-            <DataTable title="Recent User Activities" columns={activityColumns} data={crud.activities.slice(0, 8)} loading={crud.loading} />
-          </>
-        ) : isTeacher ? (
-          <>
-            <DataTable title="My Classes" columns={classColumns} data={crud.classes} loading={crud.loading} />
-            <DataTable title="My Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
-            <DataTable title="Recent Attendance" columns={attendanceColumns} data={crud.attendance.slice(0, 8)} loading={crud.loading} />
-            <DataTable title="Class Schedule" columns={scheduleColumns} data={crud.schedules.slice(0, 8)} loading={crud.loading} />
-          </>
-        ) : isStudent ? (
-          <>
-            <DataTable title="My Attendance" columns={attendanceColumns} data={crud.attendance.slice(0, 8)} loading={crud.loading} />
-            <DataTable title="My Fees" columns={feeColumns} data={crud.fees.slice(0, 8)} loading={crud.loading} />
-            <DataTable title="My Marks" columns={resultColumns} data={crud.results.slice(0, 8)} loading={crud.loading} />
-            <DataTable title="Class & Subject Info" columns={classColumns} data={crud.classes} loading={crud.loading} />
-          </>
-        ) : (
-          <>
-            <DataTable title="Teachers" columns={teacherColumns} data={crud.teachers} loading={crud.loading} />
-            <DataTable title="Classes" columns={classColumns} data={crud.classes} loading={crud.loading} />
-            <DataTable title="Students" columns={studentColumns} data={crud.students} loading={crud.loading} />
-          </>
-        )}
-      </div>
-    );
-  };
-
-  const permissionSection = permissionTarget?.type === 'school-admin'
-    ? 'admin-permissions'
-    : permissionTarget?.type === 'teacher'
-      ? 'teacher-permissions'
-      : 'student-permissions';
-  const permissionModalTitle = permissionTarget?.type === 'school-admin'
-    ? 'Manage Admin Permissions'
-    : permissionTarget?.type === 'teacher'
-      ? 'Manage Teacher Permissions'
-      : 'Manage Student Permissions';
-  const saveTargetPermissions = async (permissions: string[]) => {
-    if (!permissionTarget) return;
-    if (permissionTarget.type === 'school-admin') {
-      await crud.saveSchoolAdminPermissions(permissionTarget.row, permissions);
-    } else if (permissionTarget.type === 'teacher') {
-      await crud.saveTeacherPermissions(permissionTarget.row, permissions);
-    } else {
-      await crud.saveStudentPermissions(permissionTarget.row, permissions);
-    }
-    setPermissionTarget(null);
-  };
-
   return (
     <DashboardLayout
       user={user}
@@ -682,699 +108,165 @@ export default function DashboardView({ initialSection = 'overview' }: Dashboard
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium capitalize text-slate-500">
-            {isSuperAdmin ? 'Full system control' : isTeacher ? 'Teacher classroom access' : isStudent ? 'Student self-service access' : 'Organization-scoped access'}
+            {isSuperAdmin
+              ? "Full system control"
+              : isTeacher
+                ? "Teacher classroom access"
+                : isStudent
+                  ? "Student self-service access"
+                  : "Organization-scoped access"}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-normal text-slate-950">
-            {isSuperAdmin ? 'Super Admin Dashboard' : isTeacher ? 'Teacher Dashboard' : isStudent ? 'Student Dashboard' : 'School Admin Dashboard'}
+            {isSuperAdmin
+              ? "Super Admin Dashboard"
+              : isTeacher
+                ? "Teacher Dashboard"
+                : isStudent
+                  ? "Student Dashboard"
+                  : "School Admin Dashboard"}
           </h1>
         </div>
-        {activeSection === 'schools' && (
-          <Button disabled={crud.loading || crud.saving} onClick={crud.openCreateSchoolModal}>Create School</Button>
+        {activeSection === "schools" && (
+          <Button
+            disabled={crud.loading || crud.saving}
+            onClick={crud.openCreateSchoolModal}
+          >
+            Create School
+          </Button>
         )}
-        {activeSection === 'school-admins' && (
-          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={() => crud.openCreateSchoolAdminModal()}>Create School Admin</Button>
+        {activeSection === "school-admins" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.schools.length === 0}
+            onClick={() => crud.openCreateSchoolAdminModal()}
+          >
+            Create School Admin
+          </Button>
         )}
-        {isAdminUser && activeSection === 'teachers' && (
-          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateTeacherModal}>Create Teacher</Button>
+        {isAdminUser && activeSection === "teachers" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.schools.length === 0}
+            onClick={crud.openCreateTeacherModal}
+          >
+            Create Teacher
+          </Button>
         )}
-        {isAdminUser && activeSection === 'classes' && (
-          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateClassModal}>Create Class</Button>
+        {isAdminUser && activeSection === "classes" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.schools.length === 0}
+            onClick={crud.openCreateClassModal}
+          >
+            Create Class
+          </Button>
         )}
-        {isAdminUser && activeSection === 'students' && (
-          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0 || crud.classes.length === 0} onClick={crud.openCreateStudentModal}>Create Student</Button>
+        {isAdminUser && activeSection === "students" && (
+          <Button
+            disabled={
+              crud.loading ||
+              crud.saving ||
+              crud.schools.length === 0 ||
+              crud.classes.length === 0
+            }
+            onClick={crud.openCreateStudentModal}
+          >
+            Create Student
+          </Button>
         )}
-        {!isStudent && activeSection === 'attendance' && (
-          <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateAttendanceModal}>Mark Attendance</Button>
+        {!isStudent && activeSection === "attendance" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.students.length === 0}
+            onClick={crud.openCreateAttendanceModal}
+          >
+            Mark Attendance
+          </Button>
         )}
-        {isAdminUser && activeSection === 'fees' && (
-          <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateFeeModal}>Assign Fee</Button>
+        {isAdminUser && activeSection === "fees" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.students.length === 0}
+            onClick={crud.openCreateFeeModal}
+          >
+            Assign Fee
+          </Button>
         )}
-        {isAdminUser && activeSection === 'salaries' && (
-          <Button disabled={crud.loading || crud.saving || crud.teachers.length === 0} onClick={crud.openCreateSalaryModal}>Assign Salary</Button>
+        {isAdminUser && activeSection === "salaries" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.teachers.length === 0}
+            onClick={crud.openCreateSalaryModal}
+          >
+            Assign Salary
+          </Button>
         )}
-        {isAdminUser && activeSection === 'expenses' && (
-          <Button disabled={crud.loading || crud.saving || crud.schools.length === 0} onClick={crud.openCreateExpenseModal}>Add Expense</Button>
+        {isAdminUser && activeSection === "expenses" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.schools.length === 0}
+            onClick={crud.openCreateExpenseModal}
+          >
+            Add Expense
+          </Button>
         )}
-        {!isStudent && activeSection === 'schedule' && (
-          <Button disabled={crud.loading || crud.saving || crud.classes.length === 0} onClick={crud.openCreateScheduleModal}>Add Schedule</Button>
+        {!isStudent && activeSection === "schedule" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.classes.length === 0}
+            onClick={crud.openCreateScheduleModal}
+          >
+            Add Schedule
+          </Button>
         )}
-        {!isStudent && activeSection === 'work' && (
-          <Button disabled={crud.loading || crud.saving || crud.classes.length === 0} onClick={crud.openCreateWorkModal}>Add Work</Button>
+        {!isStudent && activeSection === "work" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.classes.length === 0}
+            onClick={crud.openCreateWorkModal}
+          >
+            Add Work
+          </Button>
         )}
-        {!isStudent && activeSection === 'results' && (
-          <Button disabled={crud.loading || crud.saving || crud.students.length === 0} onClick={crud.openCreateResultModal}>Add Result</Button>
+        {!isStudent && activeSection === "results" && (
+          <Button
+            disabled={crud.loading || crud.saving || crud.students.length === 0}
+            onClick={crud.openCreateResultModal}
+          >
+            Add Result
+          </Button>
         )}
       </div>
 
-      {renderSection()}
+      <DashboardSectionContent
+        activeSection={activeSection}
+        crud={crud}
+        user={user}
+        isSuperAdmin={isSuperAdmin}
+        isTeacher={isTeacher}
+        isStudent={isStudent}
+        attendanceDateFilter={attendanceDateFilter}
+        setAttendanceDateFilter={setAttendanceDateFilter}
+        attendanceClassFilter={attendanceClassFilter}
+        setAttendanceClassFilter={setAttendanceClassFilter}
+        attendanceSchoolFilter={attendanceSchoolFilter}
+        setAttendanceSchoolFilter={setAttendanceSchoolFilter}
+        feeMonthFilter={feeMonthFilter}
+        setFeeMonthFilter={setFeeMonthFilter}
+        feeStatusFilter={feeStatusFilter}
+        setFeeStatusFilter={setFeeStatusFilter}
+        feeClassFilter={feeClassFilter}
+        setFeeClassFilter={setFeeClassFilter}
+        salaryMonthFilter={salaryMonthFilter}
+        setSalaryMonthFilter={setSalaryMonthFilter}
+        salaryStatusFilter={salaryStatusFilter}
+        setSalaryStatusFilter={setSalaryStatusFilter}
+        expenseDateFilter={expenseDateFilter}
+        setExpenseDateFilter={setExpenseDateFilter}
+        expensePeriodFilter={expensePeriodFilter}
+        setExpensePeriodFilter={setExpensePeriodFilter}
+        expenseSchoolFilter={expenseSchoolFilter}
+        setExpenseSchoolFilter={setExpenseSchoolFilter}
+      />
 
-      <Modal
-        open={crud.schoolModalOpen}
-        title={crud.editingSchoolId ? 'Edit School' : 'Create School'}
-        description="Manage school profile and operational status."
-        onClose={() => crud.setSchoolModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School Name
-            <Input value={crud.schoolForm.name} onChange={(event) => crud.setSchoolForm({ ...crud.schoolForm, name: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Address
-            <Input value={crud.schoolForm.address} onChange={(event) => crud.setSchoolForm({ ...crud.schoolForm, address: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Status
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.schoolForm.status} onChange={(event) => crud.setSchoolForm({ ...crud.schoolForm, status: event.target.value as SchoolRow['status'] })}>
-              <option value="active">Active</option>
-              <option value="trial">Trial</option>
-              <option value="blocked">Blocked</option>
-            </select>
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setSchoolModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveSchool} disabled={crud.saving}>{crud.editingSchoolId ? 'Save Changes' : 'Create School'}</Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={crud.classModalOpen}
-        title={crud.editingClassId ? 'Edit Class' : 'Create Class'}
-        description="Manage class details for student assignment."
-        onClose={() => crud.setClassModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.classForm.schoolId} onChange={(event) => crud.setClassForm({ ...crud.classForm, schoolId: Number(event.target.value) })}>
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Class Name
-            <Input value={crud.classForm.name} onChange={(event) => crud.setClassForm({ ...crud.classForm, name: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Section
-            <Input value={crud.classForm.section} onChange={(event) => crud.setClassForm({ ...crud.classForm, section: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Details
-            <Input value={crud.classForm.description} onChange={(event) => crud.setClassForm({ ...crud.classForm, description: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Teacher
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.classForm.teacherId} onChange={(event) => crud.setClassForm({ ...crud.classForm, teacherId: Number(event.target.value) })}>
-              <option value={0}>Unassigned</option>
-              {crud.teachers
-                .filter((teacher) => teacher.schoolId === crud.classForm.schoolId)
-                .map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Status
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.classForm.status} onChange={(event) => crud.setClassForm({ ...crud.classForm, status: event.target.value as ClassRow['status'] })}>
-              <option value="active">Active</option>
-              <option value="blocked">Blocked</option>
-            </select>
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setClassModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveClass} disabled={crud.saving || !crud.classForm.name || !crud.classForm.schoolId}>
-              {crud.saving ? 'Saving...' : crud.editingClassId ? 'Save Changes' : 'Create Class'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={crud.teacherModalOpen}
-        title={crud.editingTeacherId ? 'Edit Teacher' : 'Create Teacher'}
-        description="Manage teacher account and access status."
-        onClose={() => crud.setTeacherModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Full Name
-            <Input value={crud.teacherForm.name} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, name: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Father Name
-            <Input value={crud.teacherForm.fatherName} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, fatherName: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            CNIC
-            <Input value={crud.teacherForm.cnic} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, cnic: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Email
-            <Input type="email" value={crud.teacherForm.email} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, email: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.teacherForm.schoolId} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, schoolId: Number(event.target.value) })}>
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
-          {!crud.editingTeacherId && (
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Password
-              <Input type="password" value={crud.teacherForm.password} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, password: event.target.value })} />
-            </label>
-          )}
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Subject
-            <Input value={crud.teacherForm.subject} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, subject: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Experience
-            <Input value={crud.teacherForm.experience} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, experience: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Salary
-            <Input type="number" value={crud.teacherForm.salary} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, salary: Number(event.target.value) })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Joining Date
-            <Input type="date" value={crud.teacherForm.joiningDate} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, joiningDate: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Address
-            <Input value={crud.teacherForm.address} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, address: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Status
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.teacherForm.status} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, status: event.target.value as TeacherRow['status'] })}>
-              <option value="active">Active</option>
-              <option value="blocked">Blocked</option>
-            </select>
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setTeacherModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveTeacher} disabled={crud.saving}>{crud.editingTeacherId ? 'Save Changes' : 'Create Teacher'}</Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={crud.schoolAdminModalOpen}
-        title={crud.editingSchoolAdminId ? 'Edit School Admin' : 'Create School Admin'}
-        description="Add an admin user for this school. The admin will be scoped to the selected organization."
-        onClose={() => crud.setSchoolAdminModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-              value={crud.schoolAdminForm.schoolId}
-              onChange={(event) => {
-                const selectedSchool = crud.schools.find((school) => school.id === Number(event.target.value));
-                crud.setSchoolAdminForm({
-                  ...crud.schoolAdminForm,
-                  schoolId: Number(event.target.value),
-                  organizationId: selectedSchool?.organizationId || crud.schoolAdminForm.organizationId,
-                });
-              }}
-            >
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Full Name
-            <Input
-              value={crud.schoolAdminForm.fullName}
-              onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, fullName: event.target.value })}
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Email
-            <Input
-              type="email"
-              value={crud.schoolAdminForm.email}
-              disabled={Boolean(crud.editingSchoolAdminId)}
-              onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, email: event.target.value })}
-            />
-          </label>
-          {!crud.editingSchoolAdminId && (
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Password
-              <Input
-                type="password"
-                value={crud.schoolAdminForm.password}
-                onChange={(event) => crud.setSchoolAdminForm({ ...crud.schoolAdminForm, password: event.target.value })}
-                placeholder="Password123!"
-              />
-            </label>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" disabled={crud.saving} onClick={() => crud.setSchoolAdminModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveSchoolAdmin} disabled={crud.saving || !crud.schoolAdminForm.fullName || !crud.schoolAdminForm.email || !crud.schoolAdminForm.schoolId}>
-              {crud.saving ? 'Saving...' : crud.editingSchoolAdminId ? 'Save Changes' : 'Create Admin'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={crud.studentModalOpen}
-        title={crud.editingStudentId ? 'Edit Student' : 'Create Student'}
-        description="Manage student account and access status."
-        onClose={() => crud.setStudentModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Full Name
-            <Input value={crud.studentForm.name} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, name: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Registration Number
-            <Input value={crud.studentForm.registrationNumber} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, registrationNumber: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Father Name
-            <Input value={crud.studentForm.fatherName} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, fatherName: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            B-Form / CNIC
-            <Input value={crud.studentForm.bFormCnic} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, bFormCnic: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Roll Number
-            <Input value={crud.studentForm.rollNumber} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, rollNumber: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Date of Birth
-            <Input type="date" value={crud.studentForm.dateOfBirth} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, dateOfBirth: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Email
-            <Input type="email" value={crud.studentForm.email} disabled={Boolean(crud.editingStudentId)} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, email: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-              value={crud.studentForm.schoolId}
-              onChange={(event) => {
-                const nextSchoolId = Number(event.target.value);
-                const nextClassId = crud.classes.find((schoolClass) => schoolClass.schoolId === nextSchoolId)?.id || 0;
-                crud.setStudentForm({ ...crud.studentForm, schoolId: nextSchoolId, classId: nextClassId });
-              }}
-            >
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
-          {!crud.editingStudentId && (
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Password
-              <Input type="password" value={crud.studentForm.password} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, password: event.target.value })} />
-            </label>
-          )}
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Class
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.studentForm.classId} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, classId: Number(event.target.value) })}>
-              <option value={0}>Select class</option>
-              {crud.classes
-                .filter((schoolClass) => schoolClass.schoolId === crud.studentForm.schoolId && schoolClass.status === 'active')
-                .map((schoolClass) => (
-                  <option key={schoolClass.id} value={schoolClass.id}>
-                    {schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Father CNIC
-            <Input value={crud.studentForm.fatherCnic} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, fatherCnic: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Admission Date
-            <Input type="date" value={crud.studentForm.admissionDate} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, admissionDate: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Address
-            <Input value={crud.studentForm.address} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, address: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Status
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.studentForm.status} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, status: event.target.value as StudentRow['status'] })}>
-              <option value="active">Active</option>
-              <option value="blocked">Blocked</option>
-            </select>
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setStudentModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveStudent} disabled={crud.saving || !crud.studentForm.name || !crud.studentForm.email || !crud.studentForm.schoolId || !crud.studentForm.classId}>
-              {crud.saving ? 'Saving...' : crud.editingStudentId ? 'Save Changes' : 'Create Student'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={crud.attendanceModalOpen}
-        title={crud.editingAttendanceId ? 'Override Attendance' : 'Mark Attendance'}
-        description="Record or override a student attendance entry."
-        onClose={() => crud.setAttendanceModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Student
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.attendanceForm.studentId} disabled={Boolean(crud.editingAttendanceId)} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, studentId: Number(event.target.value) })}>
-              <option value={0}>Select student</option>
-              {crud.students.map((student) => <option key={student.id} value={student.id}>{student.name} - {student.className}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Date
-            <Input type="date" value={crud.attendanceForm.date} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, date: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Status
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.attendanceForm.status} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, status: event.target.value as AttendanceRow['status'] })}>
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-              <option value="late">Late</option>
-              <option value="excused">Excused</option>
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Notes
-            <Input value={crud.attendanceForm.notes} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, notes: event.target.value })} />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setAttendanceModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveAttendance} disabled={crud.saving || !crud.attendanceForm.studentId || !crud.attendanceForm.date}>
-              {crud.saving ? 'Saving...' : crud.editingAttendanceId ? 'Save Override' : 'Mark Attendance'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={crud.feeModalOpen}
-        title={crud.editingFeeId ? 'Edit Fee' : 'Assign Monthly Fee'}
-        description="Assign monthly fees and track payment status."
-        onClose={() => crud.setFeeModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Student
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.feeForm.studentId} disabled={Boolean(crud.editingFeeId)} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, studentId: Number(event.target.value) })}>
-              <option value={0}>Select student</option>
-              {crud.students.map((student) => <option key={student.id} value={student.id}>{student.name} - {student.className}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Month
-            <Input type="month" value={crud.feeForm.month} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, month: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Amount
-            <Input type="number" value={crud.feeForm.amount} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, amount: Number(event.target.value) })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Status
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.feeForm.status} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, status: event.target.value as FeeRow['status'] })}>
-              <option value="unpaid">Unpaid</option>
-              <option value="paid">Paid</option>
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Notes
-            <Input value={crud.feeForm.notes} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, notes: event.target.value })} />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setFeeModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveFee} disabled={crud.saving || !crud.feeForm.studentId || !crud.feeForm.month || crud.feeForm.amount <= 0}>
-              {crud.saving ? 'Saving...' : crud.editingFeeId ? 'Save Fee' : 'Assign Fee'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={crud.salaryModalOpen}
-        title={crud.editingSalaryId ? 'Edit Salary' : 'Assign Teacher Salary'}
-        description="Assign teacher salaries and track paid or unpaid status."
-        onClose={() => crud.setSalaryModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Teacher
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.salaryForm.teacherId} disabled={Boolean(crud.editingSalaryId)} onChange={(event) => {
-              const teacherId = Number(event.target.value);
-              const teacher = crud.teachers.find((item) => item.id === teacherId);
-              crud.setSalaryForm({ ...crud.salaryForm, teacherId, amount: teacher?.salary || crud.salaryForm.amount });
-            }}>
-              <option value={0}>Select teacher</option>
-              {crud.teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name} - {teacher.school}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Month
-            <Input type="month" value={crud.salaryForm.month} onChange={(event) => crud.setSalaryForm({ ...crud.salaryForm, month: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Amount
-            <Input type="number" value={crud.salaryForm.amount} onChange={(event) => crud.setSalaryForm({ ...crud.salaryForm, amount: Number(event.target.value) })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Status
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.salaryForm.status} onChange={(event) => crud.setSalaryForm({ ...crud.salaryForm, status: event.target.value as SalaryRow['status'] })}>
-              <option value="unpaid">Unpaid</option>
-              <option value="paid">Paid</option>
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Notes
-            <Input value={crud.salaryForm.notes} onChange={(event) => crud.setSalaryForm({ ...crud.salaryForm, notes: event.target.value })} />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setSalaryModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveSalary} disabled={crud.saving || !crud.salaryForm.teacherId || !crud.salaryForm.month || crud.salaryForm.amount <= 0}>
-              {crud.saving ? 'Saving...' : crud.editingSalaryId ? 'Save Salary' : 'Assign Salary'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={crud.expenseModalOpen}
-        title={crud.editingExpenseId ? 'Edit Expense' : 'Add Expense'}
-        description="Record daily, weekly, or monthly school expenses."
-        onClose={() => crud.setExpenseModalOpen(false)}
-      >
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.expenseForm.schoolId} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, schoolId: Number(event.target.value) })}>
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Title
-            <Input value={crud.expenseForm.title} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, title: event.target.value })} />
-          </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Category
-              <Input value={crud.expenseForm.category} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, category: event.target.value })} />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Period
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.expenseForm.period} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, period: event.target.value as ExpenseRow['period'] })}>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </label>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Date
-              <Input type="date" value={crud.expenseForm.date} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, date: event.target.value })} />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Amount
-              <Input type="number" value={crud.expenseForm.amount} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, amount: Number(event.target.value) })} />
-            </label>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Vendor
-              <Input value={crud.expenseForm.vendor} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, vendor: event.target.value })} />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-slate-700">
-              Payment Method
-              <Input value={crud.expenseForm.paymentMethod} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, paymentMethod: event.target.value })} />
-            </label>
-          </div>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            Notes
-            <Input value={crud.expenseForm.notes} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, notes: event.target.value })} />
-          </label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setExpenseModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveExpense} disabled={crud.saving || !crud.expenseForm.schoolId || !crud.expenseForm.title || !crud.expenseForm.date || crud.expenseForm.amount <= 0}>
-              {crud.saving ? 'Saving...' : crud.editingExpenseId ? 'Save Expense' : 'Add Expense'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal open={crud.scheduleModalOpen} title={crud.editingScheduleId ? 'Edit Schedule' : 'Add Schedule'} description="Manage class schedule." onClose={() => crud.setScheduleModalOpen(false)}>
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Class
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.scheduleForm.classId} onChange={(event) => {
-              const classId = Number(event.target.value);
-              const schoolClass = crud.classes.find((item) => item.id === classId);
-              crud.setScheduleForm({ ...crud.scheduleForm, classId, teacherId: schoolClass?.teacherId || 0 });
-            }}>
-              <option value={0}>Select class</option>
-              {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Subject
-            <Input value={crud.scheduleForm.subject} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, subject: event.target.value })} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Day
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.scheduleForm.weekday} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, weekday: event.target.value })}>
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => <option key={day} value={day}>{day}</option>)}
-            </select>
-          </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-medium text-slate-700">Start Time<Input type="time" value={crud.scheduleForm.startTime} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, startTime: event.target.value })} /></label>
-            <label className="grid gap-2 text-sm font-medium text-slate-700">End Time<Input type="time" value={crud.scheduleForm.endTime} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, endTime: event.target.value })} /></label>
-          </div>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Notes<Input value={crud.scheduleForm.notes} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, notes: event.target.value })} /></label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setScheduleModalOpen(false)}>Cancel</Button>
-            <Button disabled={crud.saving || !crud.scheduleForm.classId || !crud.scheduleForm.subject} onClick={crud.saveSchedule}>{crud.saving ? 'Saving...' : 'Save Schedule'}</Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal open={crud.workModalOpen} title={crud.editingWorkId ? 'Edit Class Work' : 'Add Class Work'} description="Manage class work." onClose={() => crud.setWorkModalOpen(false)}>
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Class
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.workForm.classId} onChange={(event) => {
-              const classId = Number(event.target.value);
-              const schoolClass = crud.classes.find((item) => item.id === classId);
-              crud.setWorkForm({ ...crud.workForm, classId, teacherId: schoolClass?.teacherId || 0 });
-            }}>
-              <option value={0}>Select class</option>
-              {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Title<Input value={crud.workForm.title} onChange={(event) => crud.setWorkForm({ ...crud.workForm, title: event.target.value })} /></label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Due Date<Input type="date" value={crud.workForm.dueDate} onChange={(event) => crud.setWorkForm({ ...crud.workForm, dueDate: event.target.value })} /></label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Details<Input value={crud.workForm.description} onChange={(event) => crud.setWorkForm({ ...crud.workForm, description: event.target.value })} /></label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setWorkModalOpen(false)}>Cancel</Button>
-            <Button disabled={crud.saving || !crud.workForm.classId || !crud.workForm.title} onClick={crud.saveWork}>{crud.saving ? 'Saving...' : 'Save Work'}</Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal open={crud.resultModalOpen} title={crud.editingResultId ? 'Edit Result' : 'Add Result'} description="Manage marks and tests." onClose={() => crud.setResultModalOpen(false)}>
-        <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Student
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.resultForm.studentId} disabled={Boolean(crud.editingResultId)} onChange={(event) => {
-              const studentId = Number(event.target.value);
-              const student = crud.students.find((item) => item.id === studentId);
-              const schoolClass = student ? crud.classes.find((item) => item.id === student.classId) : undefined;
-              crud.setResultForm({ ...crud.resultForm, studentId, teacherId: schoolClass?.teacherId || 0 });
-            }}>
-              <option value={0}>Select student</option>
-              {crud.students.map((student) => <option key={student.id} value={student.id}>{student.name} - {student.className}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Exam Name<Input value={crud.resultForm.examName} onChange={(event) => crud.setResultForm({ ...crud.resultForm, examName: event.target.value })} /></label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Subject<Input value={crud.resultForm.subject} onChange={(event) => crud.setResultForm({ ...crud.resultForm, subject: event.target.value })} /></label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-medium text-slate-700">Marks<Input type="number" value={crud.resultForm.marksObtained} onChange={(event) => crud.setResultForm({ ...crud.resultForm, marksObtained: Number(event.target.value) })} /></label>
-            <label className="grid gap-2 text-sm font-medium text-slate-700">Total<Input type="number" value={crud.resultForm.totalMarks} onChange={(event) => crud.setResultForm({ ...crud.resultForm, totalMarks: Number(event.target.value) })} /></label>
-          </div>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Exam Date<Input type="date" value={crud.resultForm.examDate} onChange={(event) => crud.setResultForm({ ...crud.resultForm, examDate: event.target.value })} /></label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">Remarks<Input value={crud.resultForm.remarks} onChange={(event) => crud.setResultForm({ ...crud.resultForm, remarks: event.target.value })} /></label>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => crud.setResultModalOpen(false)}>Cancel</Button>
-            <Button disabled={crud.saving || !crud.resultForm.studentId || !crud.resultForm.examName || !crud.resultForm.subject} onClick={crud.saveResult}>{crud.saving ? 'Saving...' : 'Save Result'}</Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={permissionTarget !== null}
-        title={permissionModalTitle}
-        description={permissionTarget ? `Set individual access for ${permissionTarget.row.name}.` : 'Set individual access.'}
-        onClose={() => setPermissionTarget(null)}
-        size="wide"
-        bodyClassName="p-0"
-      >
-        {permissionTarget && (
-          <PermissionsMatrix
-            section={permissionSection}
-            title={permissionTarget.row.name}
-            description={`${permissionTarget.school} · ${permissionTarget.email}`}
-            value={permissionTarget.row.permissions}
-            saving={crud.saving}
-            onSave={saveTargetPermissions}
-          />
-        )}
-      </Modal>
-
-      <Modal
-        open={deleteTarget !== null}
-        title="Delete Record?"
-        description="This will deactivate the record and remove it from the active dashboard list."
-        onClose={() => setDeleteTarget(null)}
-      >
-        <div className="space-y-5">
-          <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
-            Are you sure you want to delete{' '}
-            <span className="font-semibold">
-              {deleteTarget?.row.name}
-            </span>
-            ?
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" disabled={crud.saving} onClick={() => setDeleteTarget(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={crud.saving}
-              onClick={async () => {
-                if (!deleteTarget) return;
-                if (deleteTarget.type === 'school') {
-                  await crud.deleteSchool(deleteTarget.row);
-                } else if (deleteTarget.type === 'class') {
-                  await crud.deleteClass(deleteTarget.row);
-                } else if (deleteTarget.type === 'school-admin') {
-                  await crud.deleteSchoolAdmin(deleteTarget.row);
-                } else if (deleteTarget.type === 'student') {
-                  await crud.deleteStudent(deleteTarget.row);
-                } else {
-                  await crud.deleteTeacher(deleteTarget.row);
-                }
-                setDeleteTarget(null);
-              }}
-            >
-              {crud.saving ? 'Deleting...' : 'Delete'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <DashboardDialogs
+        crud={crud}
+        deleteTarget={deleteTarget}
+        setDeleteTarget={setDeleteTarget}
+        permissionTarget={permissionTarget}
+        setPermissionTarget={setPermissionTarget}
+      />
     </DashboardLayout>
   );
 }
-

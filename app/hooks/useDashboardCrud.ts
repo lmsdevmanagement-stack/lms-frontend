@@ -1659,3 +1659,4 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     saveMyPassword,
   };
 }
+export type DashboardCrud = ReturnType<typeof useDashboardCrud>;
