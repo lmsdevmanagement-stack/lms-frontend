@@ -18,7 +18,7 @@ import type {
 import { DashboardDialogsProps } from '@/app/types/dashboard';
 
 
-export default function DashboardDialogs({ crud, deleteTarget, setDeleteTarget, permissionTarget, setPermissionTarget }: DashboardDialogsProps) {
+export default function DashboardDialogs({ crud, isSuperAdmin, deleteTarget, setDeleteTarget, permissionTarget, setPermissionTarget }: DashboardDialogsProps) {
   const permissionSection = permissionTarget?.type === 'school-admin'
     ? 'admin-permissions'
     : permissionTarget?.type === 'teacher'
@@ -81,13 +81,15 @@ export default function DashboardDialogs({ crud, deleteTarget, setDeleteTarget, 
         onClose={() => crud.setClassModalOpen(false)}
       >
         <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.classForm.schoolId} onChange={(event) => crud.setClassForm({ ...crud.classForm, schoolId: Number(event.target.value) })}>
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
+          {isSuperAdmin && (
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              School
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.classForm.schoolId} onChange={(event) => crud.setClassForm({ ...crud.classForm, schoolId: Number(event.target.value) })}>
+                <option value={0}>Select school</option>
+                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+              </select>
+            </label>
+          )}
           <label className="grid gap-2 text-sm font-medium text-slate-700">
             Class Name
             <Input value={crud.classForm.name} onChange={(event) => crud.setClassForm({ ...crud.classForm, name: event.target.value })} />
@@ -118,7 +120,7 @@ export default function DashboardDialogs({ crud, deleteTarget, setDeleteTarget, 
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => crud.setClassModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveClass} disabled={crud.saving || !crud.classForm.name || !crud.classForm.schoolId}>
+            <Button onClick={crud.saveClass} disabled={crud.saving || !crud.classForm.name || (isSuperAdmin && !crud.classForm.schoolId)}>
               {crud.saving ? 'Saving...' : crud.editingClassId ? 'Save Changes' : 'Create Class'}
             </Button>
           </div>
@@ -148,13 +150,15 @@ export default function DashboardDialogs({ crud, deleteTarget, setDeleteTarget, 
             Email
             <Input type="email" value={crud.teacherForm.email} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, email: event.target.value })} />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.teacherForm.schoolId} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, schoolId: Number(event.target.value) })}>
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
+          {isSuperAdmin && (
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              School
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.teacherForm.schoolId} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, schoolId: Number(event.target.value) })}>
+                <option value={0}>Select school</option>
+                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+              </select>
+            </label>
+          )}
           {!crud.editingTeacherId && (
             <label className="grid gap-2 text-sm font-medium text-slate-700">
               Password
@@ -291,21 +295,23 @@ export default function DashboardDialogs({ crud, deleteTarget, setDeleteTarget, 
             Email
             <Input type="email" value={crud.studentForm.email} disabled={Boolean(crud.editingStudentId)} onChange={(event) => crud.setStudentForm({ ...crud.studentForm, email: event.target.value })} />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-              value={crud.studentForm.schoolId}
-              onChange={(event) => {
-                const nextSchoolId = Number(event.target.value);
-                const nextClassId = crud.classes.find((schoolClass) => schoolClass.schoolId === nextSchoolId)?.id || 0;
-                crud.setStudentForm({ ...crud.studentForm, schoolId: nextSchoolId, classId: nextClassId });
-              }}
-            >
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
+          {isSuperAdmin && (
+            <label className="grid gap-2 text-sm font-medium text-slate-700">
+              School
+              <select
+                className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                value={crud.studentForm.schoolId}
+                onChange={(event) => {
+                  const nextSchoolId = Number(event.target.value);
+                  const nextClassId = crud.classes.find((schoolClass) => schoolClass.schoolId === nextSchoolId)?.id || 0;
+                  crud.setStudentForm({ ...crud.studentForm, schoolId: nextSchoolId, classId: nextClassId });
+                }}
+              >
+                <option value={0}>Select school</option>
+                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+              </select>
+            </label>
+          )}
           {!crud.editingStudentId && (
             <label className="grid gap-2 text-sm font-medium text-slate-700">
               Password
@@ -346,7 +352,7 @@ export default function DashboardDialogs({ crud, deleteTarget, setDeleteTarget, 
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => crud.setStudentModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveStudent} disabled={crud.saving || !crud.studentForm.name || !crud.studentForm.email || !crud.studentForm.schoolId || !crud.studentForm.classId}>
+            <Button onClick={crud.saveStudent} disabled={crud.saving || !crud.studentForm.name || !crud.studentForm.email || (isSuperAdmin && !crud.studentForm.schoolId) || !crud.studentForm.classId}>
               {crud.saving ? 'Saving...' : crud.editingStudentId ? 'Save Changes' : 'Create Student'}
             </Button>
           </div>
@@ -489,13 +495,6 @@ export default function DashboardDialogs({ crud, deleteTarget, setDeleteTarget, 
       >
         <div className="grid gap-4">
           <label className="grid gap-2 text-sm font-medium text-slate-700">
-            School
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={crud.expenseForm.schoolId} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, schoolId: Number(event.target.value) })}>
-              <option value={0}>Select school</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-slate-700">
             Title
             <Input value={crud.expenseForm.title} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, title: event.target.value })} />
           </label>
@@ -533,7 +532,7 @@ export default function DashboardDialogs({ crud, deleteTarget, setDeleteTarget, 
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => crud.setExpenseModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveExpense} disabled={crud.saving || !crud.expenseForm.schoolId || !crud.expenseForm.title || crud.expenseForm.amount <= 0}>
+            <Button onClick={crud.saveExpense} disabled={crud.saving || !crud.expenseForm.title || crud.expenseForm.amount <= 0}>
               {crud.saving ? 'Saving...' : crud.editingExpenseId ? 'Save Expense' : 'Add Expense'}
             </Button>
           </div>

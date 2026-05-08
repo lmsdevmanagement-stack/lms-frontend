@@ -46,7 +46,7 @@ export type StudentFormState = Pick<StudentRow, 'name' | 'email' | 'schoolId' | 
 };
 export type AttendanceFormState = Pick<AttendanceRow, 'studentId' | 'date' | 'status' | 'notes'>;
 export type FeeFormState = Pick<FeeRow, 'studentId' | 'month' | 'amount' | 'status' | 'notes'>;
-export type ExpenseFormState = Pick<ExpenseRow, 'schoolId' | 'title' | 'category' | 'date' | 'period' | 'amount' | 'vendor' | 'paymentMethod' | 'notes'>;
+export type ExpenseFormState = Pick<ExpenseRow, 'title' | 'category' | 'date' | 'period' | 'amount' | 'vendor' | 'paymentMethod' | 'notes'>;
 export type ScheduleFormState = Pick<ScheduleRow, 'classId' | 'teacherId' | 'subject' | 'weekday' | 'startTime' | 'endTime' | 'notes'>;
 export type WorkFormState = Pick<WorkRow, 'classId' | 'teacherId' | 'title' | 'description' | 'dueDate'>;
 export type ResultFormState = Pick<ResultRow, 'studentId' | 'teacherId' | 'examName' | 'subject' | 'marksObtained' | 'totalMarks' | 'examDate' | 'remarks'>;
@@ -136,7 +136,6 @@ export const emptyFeeForm: FeeFormState = {
 };
 
 export const emptyExpenseForm: ExpenseFormState = {
-  schoolId: 0,
   title: '',
   category: 'General',
   date: new Date().toISOString().slice(0, 10),
@@ -206,6 +205,30 @@ interface UseDashboardCrudArgs {
   searchTerm: string;
   enabled: boolean;
   currentUser?: UserResponse | null;
+}
+
+type PaginatedListFetcher<T> = (params: { page: number; page_size: number }) => Promise<{
+  data: {
+    data: T[];
+    pagination?: {
+      has_next: boolean;
+    };
+  };
+}>;
+
+async function loadAllPages<T>(fetchPage: PaginatedListFetcher<T>, pageSize = 500): Promise<T[]> {
+  const items: T[] = [];
+  let page = 1;
+  let hasNext = true;
+
+  while (hasNext) {
+    const response = await fetchPage({ page, page_size: pageSize });
+    items.push(...response.data.data);
+    hasNext = Boolean(response.data.pagination?.has_next);
+    page += 1;
+  }
+
+  return items;
 }
 
 function filterBySearch<T extends object>(rows: T[], searchTerm: string) {
@@ -394,9 +417,9 @@ function mapExpenseRows(records: ExpenseResponse[], schools: SchoolResponse[]): 
     const school = schools.find((item) => item.id === record.school_id);
     return {
       id: record.id,
-      organizationId: record.organization_id,
-      schoolId: record.school_id,
-      school: school?.name || 'Unassigned',
+      organizationId: record.organization_id ?? null,
+      schoolId: record.school_id ?? null,
+      school: school?.name || 'Platform',
       title: record.title,
       category: record.category,
       date: record.expense_date.slice(0, 10),
@@ -544,24 +567,21 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, salariesResponse, expensesResponse, schedulesResponse, workResponse, resultsResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
-        api.listSchools(),
-        api.listClasses(),
-        api.listUsers(),
-        api.listAttendance(),
-        api.listFees(),
-        api.listSalaries(),
-        api.listExpenses(),
-        api.listSchedules(),
-        api.listWork(),
-        api.listResults(),
+      const [schools, classes, users, attendance, fees, salaries, expenses, schedules, work, results, reportResponse, organizations, activities] = await Promise.all([
+        loadAllPages(api.listSchools),
+        loadAllPages(api.listClasses),
+        loadAllPages(api.listUsers),
+        loadAllPages(api.listAttendance),
+        loadAllPages(api.listFees),
+        loadAllPages(api.listSalaries),
+        loadAllPages(api.listExpenses),
+        loadAllPages(api.listSchedules),
+        loadAllPages(api.listWork),
+        loadAllPages(api.listResults),
         api.getDashboardReport(),
-        api.listOrganizations(),
-        api.listActivities(50),
+        loadAllPages(api.listOrganizations),
+        loadAllPages((params) => api.listActivities(200, params), 200),
       ]);
-      const schools = schoolsResponse.data.data;
-      const classes = classesResponse.data.data;
-      const users = usersResponse.data.data;
       const mappedClasses = mapClassRows(classes, schools, users);
       const mappedStudents = mapStudentRows(users, schools, mappedClasses);
       setSchoolRows(mapSchoolRows(schools, users));
@@ -570,15 +590,15 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mappedTeachers);
       setStudentRows(mappedStudents);
-      setAttendanceRows(mapAttendanceRows(attendanceResponse.data.data, mappedStudents, schools, mappedClasses));
-      setFeeRows(mapFeeRows(feesResponse.data.data, mappedStudents, schools, mappedClasses));
-      setScheduleRows(mapScheduleRows(schedulesResponse.data.data, mappedClasses, mappedTeachers));
-      setWorkRows(mapWorkRows(workResponse.data.data, mappedClasses, mappedTeachers));
-      setResultRows(mapResultRows(resultsResponse.data.data, mappedStudents, mappedClasses, mappedTeachers));
-      setSalaryRows(mapSalaryRows(salariesResponse.data.data, mappedTeachers, schools));
-      setExpenseRows(mapExpenseRows(expensesResponse.data.data, schools));
+      setAttendanceRows(mapAttendanceRows(attendance, mappedStudents, schools, mappedClasses));
+      setFeeRows(mapFeeRows(fees, mappedStudents, schools, mappedClasses));
+      setScheduleRows(mapScheduleRows(schedules, mappedClasses, mappedTeachers));
+      setWorkRows(mapWorkRows(work, mappedClasses, mappedTeachers));
+      setResultRows(mapResultRows(results, mappedStudents, mappedClasses, mappedTeachers));
+      setSalaryRows(mapSalaryRows(salaries, mappedTeachers, schools));
+      setExpenseRows(mapExpenseRows(expenses, schools));
       setReport(reportResponse.data.data);
-      const currentOrganization = organizationsResponse.data.data.find((item) => item.id === organizationId) || organizationsResponse.data.data[0] || null;
+      const currentOrganization = organizations.find((item) => item.id === organizationId) || organizations[0] || null;
       setOrganization(currentOrganization);
       if (currentOrganization) {
         setOrganizationSettingsForm({
@@ -589,7 +609,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           address: currentOrganization.address || '',
         });
       }
-      setActivityRows(activitiesResponse.data.data);
+      setActivityRows(activities);
       if (currentUser) {
         setProfileForm((current) => ({
           ...current,
@@ -681,7 +701,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
   }, [salaryRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
 
   const scopedExpenses = useMemo(() => {
-    const orgRows = isSuperAdmin ? expenseRows : expenseRows.filter((row) => row.organizationId === organizationId);
+    const orgRows = isSuperAdmin ? expenseRows.filter((row) => row.organizationId === null && row.schoolId === null) : expenseRows.filter((row) => row.organizationId === organizationId);
     const scopedRows = schoolId ? orgRows.filter((row) => row.schoolId === schoolId) : orgRows;
     return filterBySearch(scopedRows, searchTerm);
   }, [expenseRows, isSuperAdmin, organizationId, schoolId, searchTerm]);
@@ -795,8 +815,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           name: classForm.name,
           section: classForm.section || null,
           description: classForm.description || null,
-          school_id: Number(classForm.schoolId),
-          organization_id: selectedSchool?.organizationId || organizationId,
+          ...(isSuperAdmin ? { school_id: Number(classForm.schoolId), organization_id: selectedSchool?.organizationId || organizationId } : {}),
           teacher_id: Number(classForm.teacherId) || null,
           is_active: classForm.status !== 'blocked',
         });
@@ -805,8 +824,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           name: classForm.name,
           section: classForm.section || null,
           description: classForm.description || null,
-          school_id: Number(classForm.schoolId),
-          organization_id: selectedSchool?.organizationId || organizationId,
+          ...(isSuperAdmin ? { school_id: Number(classForm.schoolId), organization_id: selectedSchool?.organizationId || organizationId } : {}),
           teacher_id: Number(classForm.teacherId) || null,
         });
       }
@@ -951,7 +969,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       if (editingTeacherId) {
         await api.updateUser(editingTeacherId, {
           full_name: teacherForm.name,
-          school_id: Number(teacherForm.schoolId),
+          ...(isSuperAdmin ? { school_id: Number(teacherForm.schoolId) } : {}),
           father_name: teacherForm.fatherName || null,
           cnic: teacherForm.cnic || null,
           address: teacherForm.address || null,
@@ -974,8 +992,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           subject_specialist: teacherForm.subject || null,
           salary: Number(teacherForm.salary) || null,
           joining_date: teacherForm.joiningDate || null,
-          organization_id: selectedSchool?.organizationId || organizationId,
-          school_id: Number(teacherForm.schoolId),
+          ...(isSuperAdmin ? { organization_id: selectedSchool?.organizationId || organizationId, school_id: Number(teacherForm.schoolId) } : {}),
         });
       }
       setTeacherModalOpen(false);
@@ -1054,7 +1071,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       if (editingStudentId) {
         await api.updateUser(editingStudentId, {
           full_name: studentForm.name,
-          school_id: Number(studentForm.schoolId),
+          ...(isSuperAdmin ? { school_id: Number(studentForm.schoolId) } : {}),
           class_id: Number(studentForm.classId) || null,
           registration_number: studentForm.registrationNumber || null,
           father_name: studentForm.fatherName || null,
@@ -1080,8 +1097,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           address: studentForm.address || null,
           father_cnic: studentForm.fatherCnic || null,
           admission_date: studentForm.admissionDate || null,
-          organization_id: selectedSchool?.organizationId || organizationId,
-          school_id: Number(studentForm.schoolId),
+          ...(isSuperAdmin ? { organization_id: selectedSchool?.organizationId || organizationId, school_id: Number(studentForm.schoolId) } : {}),
           class_id: Number(studentForm.classId) || null,
         });
       }
@@ -1304,17 +1320,13 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
 
   const openCreateExpenseModal = () => {
     setEditingExpenseId(null);
-    setExpenseForm({
-      ...emptyExpenseForm,
-      schoolId: scopedSchools[0]?.id || 0,
-    });
+    setExpenseForm(emptyExpenseForm);
     setExpenseModalOpen(true);
   };
 
   const openEditExpenseModal = (expense: ExpenseRow) => {
     setEditingExpenseId(expense.id);
     setExpenseForm({
-      schoolId: expense.schoolId,
       title: expense.title,
       category: expense.category,
       date: expense.date,
@@ -1331,7 +1343,6 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setSaving(true);
     try {
       const payload = {
-        school_id: Number(expenseForm.schoolId) || null,
         title: expenseForm.title,
         category: expenseForm.category,
         expense_date: expenseForm.date,

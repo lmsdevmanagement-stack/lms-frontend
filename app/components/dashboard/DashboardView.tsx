@@ -48,7 +48,6 @@ export default function DashboardView({
   const [expensePeriodFilter, setExpensePeriodFilter] = useState<
     "all" | ExpenseRow["period"]
   >("all");
-  const [expenseSchoolFilter, setExpenseSchoolFilter] = useState(0);
   const [deleteTarget, setDeleteTarget] =
     useState<DashboardDeleteTarget | null>(null);
   const [permissionTarget, setPermissionTarget] =
@@ -197,7 +196,7 @@ export default function DashboardView({
         )}
         {isAdminUser && activeSection === "expenses" && (
           <Button
-            disabled={crud.loading || crud.saving || crud.schools.length === 0}
+            disabled={crud.loading || crud.saving || (!isSuperAdmin && crud.schools.length === 0)}
             onClick={crud.openCreateExpenseModal}
           >
             Add Expense
@@ -256,12 +255,11 @@ export default function DashboardView({
         setExpenseDateFilter={setExpenseDateFilter}
         expensePeriodFilter={expensePeriodFilter}
         setExpensePeriodFilter={setExpensePeriodFilter}
-        expenseSchoolFilter={expenseSchoolFilter}
-        setExpenseSchoolFilter={setExpenseSchoolFilter}
       />
 
       <DashboardDialogs
         crud={crud}
+        isSuperAdmin={isSuperAdmin}
         deleteTarget={deleteTarget}
         setDeleteTarget={setDeleteTarget}
         permissionTarget={permissionTarget}

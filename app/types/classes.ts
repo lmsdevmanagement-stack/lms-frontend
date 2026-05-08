@@ -15,7 +15,7 @@ export interface ClassCreateData {
   section?: string | null;
   description?: string | null;
   organization_id?: number | null;
-  school_id: number;
+  school_id?: number;
   teacher_id?: number | null;
 }
 

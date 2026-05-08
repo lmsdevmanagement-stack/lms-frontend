@@ -172,8 +172,8 @@ export interface SalaryUpdateData {
 
 export interface ExpenseResponse {
   id: number;
-  organization_id: number;
-  school_id: number;
+  organization_id?: number | null;
+  school_id?: number | null;
   title: string;
   category: string;
   expense_date: string;
@@ -187,7 +187,6 @@ export interface ExpenseResponse {
 }
 
 export interface ExpenseCreateData {
-  school_id?: number | null;
   title: string;
   category: string;
   expense_date: string;

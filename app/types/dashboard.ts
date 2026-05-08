@@ -206,8 +206,8 @@ export interface SalaryRow {
 
 export interface ExpenseRow {
   id: number;
-  organizationId: number;
-  schoolId: number;
+  organizationId: number | null;
+  schoolId: number | null;
   school: string;
   title: string;
   category: string;
@@ -241,6 +241,7 @@ export type DashboardPermissionTarget =
 
  export interface DashboardDialogsProps {
   crud: DashboardCrud;
+  isSuperAdmin: boolean;
   deleteTarget: DashboardDeleteTarget | null;
   setDeleteTarget: React.Dispatch<React.SetStateAction<DashboardDeleteTarget | null>>;
   permissionTarget: DashboardPermissionTarget | null;
