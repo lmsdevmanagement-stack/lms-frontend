@@ -207,6 +207,30 @@ interface UseDashboardCrudArgs {
   currentUser?: UserResponse | null;
 }
 
+type PaginatedListFetcher<T> = (params: { page: number; page_size: number }) => Promise<{
+  data: {
+    data: T[];
+    pagination?: {
+      has_next: boolean;
+    };
+  };
+}>;
+
+async function loadAllPages<T>(fetchPage: PaginatedListFetcher<T>, pageSize = 500): Promise<T[]> {
+  const items: T[] = [];
+  let page = 1;
+  let hasNext = true;
+
+  while (hasNext) {
+    const response = await fetchPage({ page, page_size: pageSize });
+    items.push(...response.data.data);
+    hasNext = Boolean(response.data.pagination?.has_next);
+    page += 1;
+  }
+
+  return items;
+}
+
 function filterBySearch<T extends object>(rows: T[], searchTerm: string) {
   const normalizedSearch = searchTerm.trim().toLowerCase();
   if (!normalizedSearch) return rows;
@@ -543,25 +567,21 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
-      const pageParams = { page: 1, page_size: 500 };
-      const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, salariesResponse, expensesResponse, schedulesResponse, workResponse, resultsResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
-        api.listSchools(pageParams),
-        api.listClasses(pageParams),
-        api.listUsers(pageParams),
-        api.listAttendance(pageParams),
-        api.listFees(pageParams),
-        api.listSalaries(pageParams),
-        api.listExpenses(pageParams),
-        api.listSchedules(pageParams),
-        api.listWork(pageParams),
-        api.listResults(pageParams),
+      const [schools, classes, users, attendance, fees, salaries, expenses, schedules, work, results, reportResponse, organizations, activities] = await Promise.all([
+        loadAllPages(api.listSchools),
+        loadAllPages(api.listClasses),
+        loadAllPages(api.listUsers),
+        loadAllPages(api.listAttendance),
+        loadAllPages(api.listFees),
+        loadAllPages(api.listSalaries),
+        loadAllPages(api.listExpenses),
+        loadAllPages(api.listSchedules),
+        loadAllPages(api.listWork),
+        loadAllPages(api.listResults),
         api.getDashboardReport(),
-        api.listOrganizations(pageParams),
-        api.listActivities(50, pageParams),
+        loadAllPages(api.listOrganizations),
+        loadAllPages((params) => api.listActivities(200, params), 200),
       ]);
-      const schools = schoolsResponse.data.data;
-      const classes = classesResponse.data.data;
-      const users = usersResponse.data.data;
       const mappedClasses = mapClassRows(classes, schools, users);
       const mappedStudents = mapStudentRows(users, schools, mappedClasses);
       setSchoolRows(mapSchoolRows(schools, users));
@@ -570,15 +590,15 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
       setSchoolAdminRows(mapSchoolAdminRows(users, schools));
       setTeacherRows(mappedTeachers);
       setStudentRows(mappedStudents);
-      setAttendanceRows(mapAttendanceRows(attendanceResponse.data.data, mappedStudents, schools, mappedClasses));
-      setFeeRows(mapFeeRows(feesResponse.data.data, mappedStudents, schools, mappedClasses));
-      setScheduleRows(mapScheduleRows(schedulesResponse.data.data, mappedClasses, mappedTeachers));
-      setWorkRows(mapWorkRows(workResponse.data.data, mappedClasses, mappedTeachers));
-      setResultRows(mapResultRows(resultsResponse.data.data, mappedStudents, mappedClasses, mappedTeachers));
-      setSalaryRows(mapSalaryRows(salariesResponse.data.data, mappedTeachers, schools));
-      setExpenseRows(mapExpenseRows(expensesResponse.data.data, schools));
+      setAttendanceRows(mapAttendanceRows(attendance, mappedStudents, schools, mappedClasses));
+      setFeeRows(mapFeeRows(fees, mappedStudents, schools, mappedClasses));
+      setScheduleRows(mapScheduleRows(schedules, mappedClasses, mappedTeachers));
+      setWorkRows(mapWorkRows(work, mappedClasses, mappedTeachers));
+      setResultRows(mapResultRows(results, mappedStudents, mappedClasses, mappedTeachers));
+      setSalaryRows(mapSalaryRows(salaries, mappedTeachers, schools));
+      setExpenseRows(mapExpenseRows(expenses, schools));
       setReport(reportResponse.data.data);
-      const currentOrganization = organizationsResponse.data.data.find((item) => item.id === organizationId) || organizationsResponse.data.data[0] || null;
+      const currentOrganization = organizations.find((item) => item.id === organizationId) || organizations[0] || null;
       setOrganization(currentOrganization);
       if (currentOrganization) {
         setOrganizationSettingsForm({
@@ -589,7 +609,7 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
           address: currentOrganization.address || '',
         });
       }
-      setActivityRows(activitiesResponse.data.data);
+      setActivityRows(activities);
       if (currentUser) {
         setProfileForm((current) => ({
           ...current,
