@@ -197,7 +197,7 @@ export default function DashboardView({
         )}
         {isAdminUser && activeSection === "expenses" && (
           <Button
-            disabled={crud.loading || crud.saving || crud.schools.length === 0}
+            disabled={crud.loading || crud.saving || (!isSuperAdmin && crud.schools.length === 0)}
             onClick={crud.openCreateExpenseModal}
           >
             Add Expense
@@ -262,6 +262,7 @@ export default function DashboardView({
 
       <DashboardDialogs
         crud={crud}
+        isSuperAdmin={isSuperAdmin}
         deleteTarget={deleteTarget}
         setDeleteTarget={setDeleteTarget}
         permissionTarget={permissionTarget}

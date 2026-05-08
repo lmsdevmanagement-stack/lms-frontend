@@ -381,7 +381,7 @@ export default function DashboardSectionContent({
     { key: 'date', header: 'Date', cell: (row) => row.date },
     { key: 'period', header: 'Period', cell: (row) => <Badge variant="secondary">{row.period}</Badge> },
     { key: 'category', header: 'Category', cell: (row) => row.category },
-    { key: 'school', header: 'School', cell: (row) => row.school },
+    ...(isSuperAdmin ? [] : [{ key: 'school', header: 'School', cell: (row: ExpenseRow) => row.school }]),
     { key: 'amount', header: 'Amount', cell: (row) => `Rs ${row.amount.toLocaleString()}` },
     { key: 'vendor', header: 'Vendor', cell: (row) => row.vendor || '-' },
     { key: 'paymentMethod', header: 'Payment', cell: (row) => row.paymentMethod || '-' },
@@ -455,7 +455,7 @@ export default function DashboardSectionContent({
       <div className="space-y-4">
         <StatsGrid stats={expenseSummaryStats} />
         <Card>
-          <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+          <CardContent className={`grid gap-3 p-4 ${isSuperAdmin ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
             <Input type="date" value={expenseDateFilter} onChange={(event) => setExpenseDateFilter(event.target.value)} />
             <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expensePeriodFilter} onChange={(event) => setExpensePeriodFilter(event.target.value as 'all' | ExpenseRow['period'])}>
               <option value="all">All periods</option>
@@ -463,13 +463,15 @@ export default function DashboardSectionContent({
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
             </select>
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expenseSchoolFilter} onChange={(event) => setExpenseSchoolFilter(Number(event.target.value))}>
-              <option value={0}>All schools</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
+            {!isSuperAdmin && (
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expenseSchoolFilter} onChange={(event) => setExpenseSchoolFilter(Number(event.target.value))}>
+                <option value={0}>All schools</option>
+                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+              </select>
+            )}
           </CardContent>
         </Card>
-        <DataTable title="Expenses" description="Record daily, weekly, or monthly school expenses and review totals." columns={expenseColumns} data={expenseRows} loading={crud.loading} />
+        <DataTable title="Expenses" description={isSuperAdmin ? 'Record platform expenses and review totals.' : 'Record daily, weekly, or monthly school expenses and review totals.'} columns={expenseColumns} data={expenseRows} loading={crud.loading} />
       </div>
     );
   }
