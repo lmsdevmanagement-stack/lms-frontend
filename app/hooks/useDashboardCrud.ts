@@ -543,20 +543,21 @@ export function useDashboardCrud({ isSuperAdmin, organizationId, schoolId, searc
     setLoading(true);
     setError(null);
     try {
+      const pageParams = { page: 1, page_size: 500 };
       const [schoolsResponse, classesResponse, usersResponse, attendanceResponse, feesResponse, salariesResponse, expensesResponse, schedulesResponse, workResponse, resultsResponse, reportResponse, organizationsResponse, activitiesResponse] = await Promise.all([
-        api.listSchools(),
-        api.listClasses(),
-        api.listUsers(),
-        api.listAttendance(),
-        api.listFees(),
-        api.listSalaries(),
-        api.listExpenses(),
-        api.listSchedules(),
-        api.listWork(),
-        api.listResults(),
+        api.listSchools(pageParams),
+        api.listClasses(pageParams),
+        api.listUsers(pageParams),
+        api.listAttendance(pageParams),
+        api.listFees(pageParams),
+        api.listSalaries(pageParams),
+        api.listExpenses(pageParams),
+        api.listSchedules(pageParams),
+        api.listWork(pageParams),
+        api.listResults(pageParams),
         api.getDashboardReport(),
-        api.listOrganizations(),
-        api.listActivities(50),
+        api.listOrganizations(pageParams),
+        api.listActivities(50, pageParams),
       ]);
       const schools = schoolsResponse.data.data;
       const classes = classesResponse.data.data;

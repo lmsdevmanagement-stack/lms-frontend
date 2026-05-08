@@ -55,6 +55,11 @@ const api: AxiosInstance = axios.create({
   },
 });
 
+export interface PaginationQuery {
+  page?: number;
+  page_size?: number;
+}
+
 // Request interceptor to add token
 api.interceptors.request.use(
   (config) => {
@@ -124,13 +129,13 @@ export const logout = (): Promise<void> => {
 };
 
 // Activities API
-export const listActivities = (limit = 50): Promise<AxiosResponse<ApiResponse<ActivityResponse[]>>> => {
-  return api.get(API_ENDPOINTS.activities.base, { params: { limit } });
+export const listActivities = (limit = 50, params?: PaginationQuery): Promise<AxiosResponse<ApiResponse<ActivityResponse[]>>> => {
+  return api.get(API_ENDPOINTS.activities.base, { params: { limit, ...params } });
 };
 
 // Organizations API
-export const listOrganizations = (): Promise<AxiosResponse<ApiResponse<OrganizationResponse[]>>> => {
-  return api.get(API_ENDPOINTS.organizations.base);
+export const listOrganizations = (params?: PaginationQuery): Promise<AxiosResponse<ApiResponse<OrganizationResponse[]>>> => {
+  return api.get(API_ENDPOINTS.organizations.base, { params });
 };
 
 export const createOrganization = (data: OrganizationCreateData): Promise<AxiosResponse<ApiResponse<OrganizationResponse>>> => {
@@ -160,8 +165,8 @@ export const createOrganizationAdmin = (
 };
 
 // Schools API
-export const listSchools = (): Promise<AxiosResponse<ApiResponse<SchoolResponse[]>>> => {
-  return api.get(API_ENDPOINTS.schools.base);
+export const listSchools = (params?: PaginationQuery): Promise<AxiosResponse<ApiResponse<SchoolResponse[]>>> => {
+  return api.get(API_ENDPOINTS.schools.base, { params });
 };
 
 export const createSchool = (data: SchoolCreateData): Promise<AxiosResponse<ApiResponse<SchoolResponse>>> => {
@@ -184,8 +189,8 @@ export const deactivateSchool = (schoolId: number): Promise<AxiosResponse<ApiRes
 };
 
 // Classes API
-export const listClasses = (): Promise<AxiosResponse<ApiResponse<ClassResponse[]>>> => {
-  return api.get(API_ENDPOINTS.classes.base);
+export const listClasses = (params?: PaginationQuery): Promise<AxiosResponse<ApiResponse<ClassResponse[]>>> => {
+  return api.get(API_ENDPOINTS.classes.base, { params });
 };
 
 export const createClass = (data: ClassCreateData): Promise<AxiosResponse<ApiResponse<ClassResponse>>> => {
@@ -212,7 +217,7 @@ export const listAttendance = (params?: {
   attendance_date?: string;
   class_id?: number;
   school_id?: number;
-}): Promise<AxiosResponse<ApiResponse<AttendanceResponse[]>>> => {
+} & PaginationQuery): Promise<AxiosResponse<ApiResponse<AttendanceResponse[]>>> => {
   return api.get(API_ENDPOINTS.attendance.base, { params });
 };
 
@@ -233,7 +238,7 @@ export const listFees = (params?: {
   class_id?: number;
   school_id?: number;
   status?: FeeResponse['status'];
-}): Promise<AxiosResponse<ApiResponse<FeeResponse[]>>> => {
+} & PaginationQuery): Promise<AxiosResponse<ApiResponse<FeeResponse[]>>> => {
   return api.get(API_ENDPOINTS.fees.base, { params });
 };
 
@@ -250,7 +255,7 @@ export const listSalaries = (params?: {
   salary_month?: string;
   school_id?: number;
   status?: SalaryResponse['status'];
-}): Promise<AxiosResponse<ApiResponse<SalaryResponse[]>>> => {
+} & PaginationQuery): Promise<AxiosResponse<ApiResponse<SalaryResponse[]>>> => {
   return api.get(API_ENDPOINTS.salaries.base, { params });
 };
 
@@ -267,7 +272,7 @@ export const listExpenses = (params?: {
   period?: ExpenseResponse['period'];
   expense_date?: string;
   school_id?: number;
-}): Promise<AxiosResponse<ApiResponse<ExpenseResponse[]>>> => {
+} & PaginationQuery): Promise<AxiosResponse<ApiResponse<ExpenseResponse[]>>> => {
   return api.get(API_ENDPOINTS.expenses.base, { params });
 };
 
@@ -285,8 +290,8 @@ export const getDashboardReport = (): Promise<AxiosResponse<ApiResponse<Dashboar
 };
 
 // Academics API
-export const listSchedules = (): Promise<AxiosResponse<ApiResponse<ScheduleResponse[]>>> => {
-  return api.get(API_ENDPOINTS.academics.schedules);
+export const listSchedules = (params?: PaginationQuery): Promise<AxiosResponse<ApiResponse<ScheduleResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.schedules, { params });
 };
 
 export const createSchedule = (data: ScheduleCreateData): Promise<AxiosResponse<ApiResponse<ScheduleResponse>>> => {
@@ -297,8 +302,8 @@ export const updateSchedule = (scheduleId: number, data: ScheduleUpdateData): Pr
   return api.patch(API_ENDPOINTS.academics.scheduleById(scheduleId), data);
 };
 
-export const listWork = (): Promise<AxiosResponse<ApiResponse<WorkResponse[]>>> => {
-  return api.get(API_ENDPOINTS.academics.work);
+export const listWork = (params?: PaginationQuery): Promise<AxiosResponse<ApiResponse<WorkResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.work, { params });
 };
 
 export const createWork = (data: WorkCreateData): Promise<AxiosResponse<ApiResponse<WorkResponse>>> => {
@@ -309,8 +314,8 @@ export const updateWork = (workId: number, data: WorkUpdateData): Promise<AxiosR
   return api.patch(API_ENDPOINTS.academics.workById(workId), data);
 };
 
-export const listResults = (): Promise<AxiosResponse<ApiResponse<ResultResponse[]>>> => {
-  return api.get(API_ENDPOINTS.academics.results);
+export const listResults = (params?: PaginationQuery): Promise<AxiosResponse<ApiResponse<ResultResponse[]>>> => {
+  return api.get(API_ENDPOINTS.academics.results, { params });
 };
 
 export const createResult = (data: ResultCreateData): Promise<AxiosResponse<ApiResponse<ResultResponse>>> => {
@@ -322,8 +327,8 @@ export const updateResult = (resultId: number, data: ResultUpdateData): Promise<
 };
 
 // Users API
-export const listUsers = (): Promise<AxiosResponse<ApiResponse<UserResponse[]>>> => {
-  return api.get(API_ENDPOINTS.users.base);
+export const listUsers = (params?: PaginationQuery): Promise<AxiosResponse<ApiResponse<UserResponse[]>>> => {
+  return api.get(API_ENDPOINTS.users.base, { params });
 };
 
 export const createUser = (data: UserCreateData): Promise<AxiosResponse<ApiResponse<UserResponse>>> => {
