@@ -120,7 +120,7 @@ export default function DashboardDialogs({ crud, isSuperAdmin, deleteTarget, set
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => crud.setClassModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveClass} disabled={crud.saving || !crud.classForm.name || !crud.classForm.schoolId}>
+            <Button onClick={crud.saveClass} disabled={crud.saving || !crud.classForm.name || (isSuperAdmin && !crud.classForm.schoolId)}>
               {crud.saving ? 'Saving...' : crud.editingClassId ? 'Save Changes' : 'Create Class'}
             </Button>
           </div>
@@ -352,7 +352,7 @@ export default function DashboardDialogs({ crud, isSuperAdmin, deleteTarget, set
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => crud.setStudentModalOpen(false)}>Cancel</Button>
-            <Button onClick={crud.saveStudent} disabled={crud.saving || !crud.studentForm.name || !crud.studentForm.email || !crud.studentForm.schoolId || !crud.studentForm.classId}>
+            <Button onClick={crud.saveStudent} disabled={crud.saving || !crud.studentForm.name || !crud.studentForm.email || (isSuperAdmin && !crud.studentForm.schoolId) || !crud.studentForm.classId}>
               {crud.saving ? 'Saving...' : crud.editingStudentId ? 'Save Changes' : 'Create Student'}
             </Button>
           </div>

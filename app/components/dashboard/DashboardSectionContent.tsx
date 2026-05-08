@@ -455,7 +455,7 @@ export default function DashboardSectionContent({
       <div className="space-y-4">
         <StatsGrid stats={expenseSummaryStats} />
         <Card>
-          <CardContent className={`grid gap-3 p-4 ${isSuperAdmin ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+          <CardContent className="grid gap-3 p-4 md:grid-cols-2">
             <Input type="date" value={expenseDateFilter} onChange={(event) => setExpenseDateFilter(event.target.value)} />
             <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expensePeriodFilter} onChange={(event) => setExpensePeriodFilter(event.target.value as 'all' | ExpenseRow['period'])}>
               <option value="all">All periods</option>
@@ -463,12 +463,6 @@ export default function DashboardSectionContent({
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
             </select>
-            {!isSuperAdmin && (
-              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={expenseSchoolFilter} onChange={(event) => setExpenseSchoolFilter(Number(event.target.value))}>
-                <option value={0}>All schools</option>
-                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-              </select>
-            )}
           </CardContent>
         </Card>
         <DataTable title="Expenses" description={isSuperAdmin ? 'Record platform expenses and review totals.' : 'Record daily, weekly, or monthly school expenses and review totals.'} columns={expenseColumns} data={expenseRows} loading={crud.loading} />
@@ -491,16 +485,18 @@ export default function DashboardSectionContent({
     return (
       <div className="space-y-4">
         <Card>
-          <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+          <CardContent className={`grid gap-3 p-4 ${isSuperAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             <Input type="date" value={attendanceDateFilter} onChange={(event) => setAttendanceDateFilter(event.target.value)} />
             <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={attendanceClassFilter} onChange={(event) => setAttendanceClassFilter(Number(event.target.value))}>
               <option value={0}>All classes</option>
               {crud.classes.map((schoolClass) => <option key={schoolClass.id} value={schoolClass.id}>{schoolClass.section ? `${schoolClass.name} - ${schoolClass.section}` : schoolClass.name}</option>)}
             </select>
-            <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={attendanceSchoolFilter} onChange={(event) => setAttendanceSchoolFilter(Number(event.target.value))}>
-              <option value={0}>All schools</option>
-              {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
-            </select>
+            {isSuperAdmin && (
+              <select className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm" value={attendanceSchoolFilter} onChange={(event) => setAttendanceSchoolFilter(Number(event.target.value))}>
+                <option value={0}>All schools</option>
+                {crud.schools.map((school) => <option key={school.id} value={school.id}>{school.name}</option>)}
+              </select>
+            )}
           </CardContent>
         </Card>
         <DataTable title="Attendance" description={isStudent ? 'Your daily attendance and date-wise history.' : 'View and override attendance by date, class, or school.'} columns={attendanceColumns} data={attendanceRows} loading={crud.loading} />
