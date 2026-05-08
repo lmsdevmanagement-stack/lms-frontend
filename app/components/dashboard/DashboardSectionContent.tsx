@@ -62,8 +62,6 @@ interface DashboardSectionContentProps {
   setExpenseDateFilter: Dispatch<SetStateAction<string>>;
   expensePeriodFilter: 'all' | ExpenseRow['period'];
   setExpensePeriodFilter: Dispatch<SetStateAction<'all' | ExpenseRow['period']>>;
-  expenseSchoolFilter: number;
-  setExpenseSchoolFilter: Dispatch<SetStateAction<number>>;
 }
 
 const statusVariant = {
@@ -105,8 +103,6 @@ export default function DashboardSectionContent({
   setExpenseDateFilter,
   expensePeriodFilter,
   setExpensePeriodFilter,
-  expenseSchoolFilter,
-  setExpenseSchoolFilter,
 }: DashboardSectionContentProps) {
   const stats: StatCard[] = isSuperAdmin ? [
     { label: 'Schools', value: String(crud.schools.length), description: 'All managed schools' },
@@ -367,7 +363,6 @@ export default function DashboardSectionContent({
   const expenseRows = crud.expenses.filter((row) => {
     if (expenseDateFilter && row.date !== expenseDateFilter) return false;
     if (expensePeriodFilter !== 'all' && row.period !== expensePeriodFilter) return false;
-    if (expenseSchoolFilter && row.schoolId !== expenseSchoolFilter) return false;
     return true;
   });
   const expenseTotal = expenseRows.reduce((total, row) => total + row.amount, 0);

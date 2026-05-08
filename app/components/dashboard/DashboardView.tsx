@@ -48,7 +48,6 @@ export default function DashboardView({
   const [expensePeriodFilter, setExpensePeriodFilter] = useState<
     "all" | ExpenseRow["period"]
   >("all");
-  const [expenseSchoolFilter, setExpenseSchoolFilter] = useState(0);
   const [deleteTarget, setDeleteTarget] =
     useState<DashboardDeleteTarget | null>(null);
   const [permissionTarget, setPermissionTarget] =
@@ -256,8 +255,6 @@ export default function DashboardView({
         setExpenseDateFilter={setExpenseDateFilter}
         expensePeriodFilter={expensePeriodFilter}
         setExpensePeriodFilter={setExpensePeriodFilter}
-        expenseSchoolFilter={expenseSchoolFilter}
-        setExpenseSchoolFilter={setExpenseSchoolFilter}
       />
 
       <DashboardDialogs
