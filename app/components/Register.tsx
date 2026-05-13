@@ -1,9 +1,9 @@
 'use client';
 
 import { Lock } from 'lucide-react';
-import { APP_ROUTES } from '../constants/routes';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { APP_ROUTES } from '@/app/constants/routes';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 
 export default function Register() {
   return (

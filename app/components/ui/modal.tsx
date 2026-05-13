@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
-import { Button } from './button';
-import { cn } from '../../lib/utils';
+import { Button } from '@/app/components/ui/button';
+import { cn } from '@/app/lib/utils';
 import type React from 'react';
 
 type ModalSize = 'default' | 'wide' | 'full';
@@ -52,9 +52,6 @@ export function Modal({ open, title, description, onClose, children, size = 'def
           </Button>
         </div>
         <div className={cn('min-h-0 overflow-y-auto p-4 sm:p-5', bodyClassName)}>{children}</div>
-        <div className="flex shrink-0 justify-end border-t border-slate-200 bg-white p-3 sm:p-4">
-          <Button variant="outline" onClick={onClose}>Close</Button>
-        </div>
       </div>
     </div>
   );

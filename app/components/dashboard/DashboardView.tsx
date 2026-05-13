@@ -2,20 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-import DashboardLayout from "./DashboardLayout";
-import DashboardSectionContent from "./DashboardSectionContent";
-import { useDashboardAuth } from "../../hooks/useDashboardAuth";
-import { useDashboardCrud } from "../../hooks/useDashboardCrud";
-import { useMounted } from "../../hooks/useMounted";
-import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
-import type {
-  DashboardSection,
-  ExpenseRow,
-  FeeRow,
-  SalaryRow,
-} from "../../types";
-import DashboardDialogs from "./DashboardDialogs";
+import DashboardLayout from "@/app/components/dashboard/DashboardLayout";
+import DashboardSectionContent from "@/app/components/dashboard/DashboardSectionContent";
+import DashboardDialogs from "@/app/components/modals/DashboardDialogs";
+import { useDashboardAuth } from "@/app/hooks/useDashboardAuth";
+import { useDashboardCrud } from "@/app/hooks/useDashboardCrud";
+import { useMounted } from "@/app/hooks/useMounted";
+import { Skeleton } from "@/app/components/ui/skeleton";
+import type { DashboardSection, ExpenseRow, FeeRow, SalaryRow } from "@/app/types";
 import {
   DashboardDeleteTarget,
   DashboardPermissionTarget,
@@ -63,7 +57,6 @@ export default function DashboardView({
   } = useDashboardAuth();
   const isTeacher = role === "teacher";
   const isStudent = role === "student";
-  const isAdminUser = isSuperAdmin || role === "admin";
   const crud = useDashboardCrud({
     isSuperAdmin,
     organizationId,
@@ -104,7 +97,7 @@ export default function DashboardView({
       onSearchChange={setSearchTerm}
       onLogout={handleLogout}
     >
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-6">
         <div>
           <p className="text-sm font-medium capitalize text-slate-500">
             {isSuperAdmin
@@ -122,110 +115,9 @@ export default function DashboardView({
                 ? "Teacher Dashboard"
                 : isStudent
                   ? "Student Dashboard"
-                  : "School Admin Dashboard"}
+              : "School Admin Dashboard"}
           </h1>
         </div>
-        {activeSection === "schools" && (
-          <Button
-            disabled={crud.loading || crud.saving}
-            onClick={crud.openCreateSchoolModal}
-          >
-            Create School
-          </Button>
-        )}
-        {activeSection === "school-admins" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.schools.length === 0}
-            onClick={() => crud.openCreateSchoolAdminModal()}
-          >
-            Create School Admin
-          </Button>
-        )}
-        {isAdminUser && activeSection === "teachers" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.schools.length === 0}
-            onClick={crud.openCreateTeacherModal}
-          >
-            Create Teacher
-          </Button>
-        )}
-        {isAdminUser && activeSection === "classes" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.schools.length === 0}
-            onClick={crud.openCreateClassModal}
-          >
-            Create Class
-          </Button>
-        )}
-        {isAdminUser && activeSection === "students" && (
-          <Button
-            disabled={
-              crud.loading ||
-              crud.saving ||
-              crud.schools.length === 0 ||
-              crud.classes.length === 0
-            }
-            onClick={crud.openCreateStudentModal}
-          >
-            Create Student
-          </Button>
-        )}
-        {!isStudent && activeSection === "attendance" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.students.length === 0}
-            onClick={crud.openCreateAttendanceModal}
-          >
-            Mark Attendance
-          </Button>
-        )}
-        {isAdminUser && activeSection === "fees" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.students.length === 0}
-            onClick={crud.openCreateFeeModal}
-          >
-            Assign Fee
-          </Button>
-        )}
-        {isAdminUser && activeSection === "salaries" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.teachers.length === 0}
-            onClick={crud.openCreateSalaryModal}
-          >
-            Assign Salary
-          </Button>
-        )}
-        {isAdminUser && activeSection === "expenses" && (
-          <Button
-            disabled={crud.loading || crud.saving || (!isSuperAdmin && crud.schools.length === 0)}
-            onClick={crud.openCreateExpenseModal}
-          >
-            Add Expense
-          </Button>
-        )}
-        {!isStudent && activeSection === "schedule" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.classes.length === 0}
-            onClick={crud.openCreateScheduleModal}
-          >
-            Add Schedule
-          </Button>
-        )}
-        {!isStudent && activeSection === "work" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.classes.length === 0}
-            onClick={crud.openCreateWorkModal}
-          >
-            Add Work
-          </Button>
-        )}
-        {!isStudent && activeSection === "results" && (
-          <Button
-            disabled={crud.loading || crud.saving || crud.students.length === 0}
-            onClick={crud.openCreateResultModal}
-          >
-            Add Result
-          </Button>
-        )}
       </div>
 
       <DashboardSectionContent

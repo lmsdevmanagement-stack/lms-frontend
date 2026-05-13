@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Skeleton } from '../ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { Button } from '../ui/button';
-import type { DataTableColumn } from '../../types';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/app/components/ui/table';
+import { Button } from '@/app/components/ui/button';
+import type { DataTableColumn } from '@/app/types';
 
 interface DataTableProps<T> {
   title: string;
@@ -15,9 +15,16 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   loading?: boolean;
   initialPageSize?: number;
+  headerAction?: ReactNode;
+  onRowClick?: (row: T) => void;
 }
 
 const pageSizeOptions = [10, 25, 50];
+const interactiveSelector = 'a,button,input,select,textarea,label,[role="button"]';
+
+function isInteractiveTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && Boolean(target.closest(interactiveSelector));
+}
 
 export default function DataTable<T>({
   title,
@@ -27,6 +34,8 @@ export default function DataTable<T>({
   emptyMessage = 'No records found.',
   loading = false,
   initialPageSize = 10,
+  headerAction,
+  onRowClick,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
@@ -52,22 +61,29 @@ export default function DataTable<T>({
             <CardTitle>{title}</CardTitle>
             {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
           </div>
-          {!loading && data.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span>Rows</span>
-              <select
-                className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700"
-                value={pageSize}
-                onChange={(event) => setPageSize(Number(event.target.value))}
-              >
-                {pageSizeOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {!loading && data.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <span>Rows</span>
+                <select
+                  className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700"
+                  value={pageSize}
+                  onChange={(event) => setPageSize(Number(event.target.value))}
+                >
+                  {pageSizeOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {headerAction && (
+              <div onClick={(event) => event.stopPropagation()}>
+                {headerAction}
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -95,7 +111,14 @@ export default function DataTable<T>({
                 ))
               ) : visibleData.length > 0 ? (
                 visibleData.map((row, rowIndex) => (
-                  <TableRow key={rowIndex}>
+                  <TableRow
+                    key={rowIndex}
+                    className={onRowClick ? 'cursor-pointer' : undefined}
+                    onClick={(event) => {
+                      if (!onRowClick || isInteractiveTarget(event.target)) return;
+                      onRowClick(row);
+                    }}
+                  >
                     {columns.map((column) => (
                       <TableCell key={column.key} className={column.className}>
                         {column.cell(row)}

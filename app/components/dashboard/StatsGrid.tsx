@@ -1,5 +1,5 @@
-import { Card, CardContent } from '../ui/card';
-import type { StatCard } from '../../types';
+import { Card, CardContent } from '@/app/components/ui/card';
+import type { StatCard } from '@/app/types';
 
 interface StatsGridProps {
   stats: StatCard[];

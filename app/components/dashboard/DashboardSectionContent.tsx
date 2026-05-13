@@ -1,19 +1,20 @@
 'use client';
 
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
-import DataTable from './DataTable';
-import PermissionsMatrix from './PermissionsMatrix';
-import StatsGrid from './StatsGrid';
+import { Plus } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Input } from '@/app/components/ui/input';
+import { Badge } from '@/app/components/ui/badge';
+import DataTable from '@/app/components/dashboard/DataTable';
+import PermissionsMatrix from '@/app/components/dashboard/PermissionsMatrix';
+import StatsGrid from '@/app/components/dashboard/StatsGrid';
 import {
   AdminDashboardOverview,
   StudentDashboardOverview,
   SuperAdminDashboardOverview,
   TeacherDashboardOverview,
-} from './DashboardOverviews';
-import type { DashboardCrud } from '../../hooks/useDashboardCrud';
+} from '@/app/components/dashboard/DashboardOverviews';
+import type { DashboardCrud } from '@/app/hooks/useDashboardCrud';
 import type {
   ActivityResponse,
   AttendanceRow,
@@ -32,7 +33,7 @@ import type {
   TeacherRow,
   WorkRow,
   UserResponse,
-} from '../../types';
+} from '@/app/types';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface DashboardSectionContentProps {
@@ -104,6 +105,14 @@ export default function DashboardSectionContent({
   expensePeriodFilter,
   setExpensePeriodFilter,
 }: DashboardSectionContentProps) {
+  const isAdminUser = isSuperAdmin || (!isTeacher && !isStudent);
+  const addButton = (label: string, onClick: () => void, disabled = false) => (
+    <Button disabled={crud.loading || crud.saving || disabled} onClick={onClick}>
+      <Plus className="h-4 w-4" aria-hidden="true" />
+      {label}
+    </Button>
+  );
+
   const stats: StatCard[] = isSuperAdmin ? [
     { label: 'Schools', value: String(crud.schools.length), description: 'All managed schools' },
     { label: 'School Admins', value: String(crud.schoolAdmins.length), description: 'Admins assigned to schools' },
@@ -437,10 +446,30 @@ export default function DashboardSectionContent({
   ];
 
   if (activeSection === 'schools') {
-    return <DataTable title="Organizations / Schools" description="Create, edit, block, and delete schools." columns={schoolColumns} data={crud.schools} loading={crud.loading} />;
+    return (
+      <DataTable
+        title="Organizations / Schools"
+        description="Create, edit, block, and delete schools."
+        columns={schoolColumns}
+        data={crud.schools}
+        loading={crud.loading}
+        headerAction={addButton('Create School', crud.openCreateSchoolModal)}
+        onRowClick={crud.openEditSchoolModal}
+      />
+    );
   }
   if (activeSection === 'school-admins') {
-    return <DataTable title="School Admins" description="Create, edit, block, and delete school-scoped admins." columns={schoolAdminColumns} data={crud.schoolAdmins} loading={crud.loading} />;
+    return (
+      <DataTable
+        title="School Admins"
+        description="Create, edit, block, and delete school-scoped admins."
+        columns={schoolAdminColumns}
+        data={crud.schoolAdmins}
+        loading={crud.loading}
+        headerAction={addButton('Create Admin', () => crud.openCreateSchoolAdminModal(), crud.schools.length === 0)}
+        onRowClick={crud.openEditSchoolAdminModal}
+      />
+    );
   }
   if (activeSection === 'activities') {
     return <DataTable title="User Activities" description="Track login, school, admin, teacher, and student changes across the platform." columns={activityColumns} data={crud.activities} loading={crud.loading} />;
@@ -460,7 +489,15 @@ export default function DashboardSectionContent({
             </select>
           </CardContent>
         </Card>
-        <DataTable title="Expenses" description={isSuperAdmin ? 'Record platform expenses and review totals.' : 'Record daily, weekly, or monthly school expenses and review totals.'} columns={expenseColumns} data={expenseRows} loading={crud.loading} />
+        <DataTable
+          title="Expenses"
+          description={isSuperAdmin ? 'Record platform expenses and review totals.' : 'Record daily, weekly, or monthly school expenses and review totals.'}
+          columns={expenseColumns}
+          data={expenseRows}
+          loading={crud.loading}
+          headerAction={isAdminUser ? addButton('Add Expense', crud.openCreateExpenseModal, !isSuperAdmin && crud.schools.length === 0) : undefined}
+          onRowClick={isAdminUser ? crud.openEditExpenseModal : undefined}
+        />
       </div>
     );
   }
@@ -468,13 +505,43 @@ export default function DashboardSectionContent({
     return <PermissionsMatrix section="admin-permissions" />;
   }
   if (activeSection === 'teachers') {
-    return <DataTable title="Teachers" description="Create, edit, delete, block, and reset teacher access." columns={teacherColumns} data={crud.teachers} loading={crud.loading} />;
+    return (
+      <DataTable
+        title="Teachers"
+        description="Create, edit, delete, block, and reset teacher access."
+        columns={teacherColumns}
+        data={crud.teachers}
+        loading={crud.loading}
+        headerAction={isAdminUser ? addButton('Create Teacher', crud.openCreateTeacherModal, crud.schools.length === 0) : undefined}
+        onRowClick={isAdminUser ? crud.openEditTeacherModal : undefined}
+      />
+    );
   }
   if (activeSection === 'classes') {
-    return <DataTable title={isStudent ? 'Class & Subject Info' : 'Classes'} description={isStudent ? 'Your class details and assigned teacher.' : 'Create, edit, block, and assign student classes.'} columns={classColumns} data={crud.classes} loading={crud.loading} />;
+    return (
+      <DataTable
+        title={isStudent ? 'Class & Subject Info' : 'Classes'}
+        description={isStudent ? 'Your class details and assigned teacher.' : 'Create, edit, block, and assign student classes.'}
+        columns={classColumns}
+        data={crud.classes}
+        loading={crud.loading}
+        headerAction={isAdminUser ? addButton('Create Class', crud.openCreateClassModal, crud.schools.length === 0) : undefined}
+        onRowClick={!isTeacher && !isStudent ? crud.openEditClassModal : undefined}
+      />
+    );
   }
   if (activeSection === 'students') {
-    return <DataTable title="Students" description="Create, edit, delete, block, and reset student access." columns={studentColumns} data={crud.students} loading={crud.loading} />;
+    return (
+      <DataTable
+        title="Students"
+        description="Create, edit, delete, block, and reset student access."
+        columns={studentColumns}
+        data={crud.students}
+        loading={crud.loading}
+        headerAction={isAdminUser ? addButton('Create Student', crud.openCreateStudentModal, crud.schools.length === 0 || crud.classes.length === 0) : undefined}
+        onRowClick={isAdminUser ? crud.openEditStudentModal : undefined}
+      />
+    );
   }
   if (activeSection === 'attendance') {
     return (
@@ -494,7 +561,15 @@ export default function DashboardSectionContent({
             )}
           </CardContent>
         </Card>
-        <DataTable title="Attendance" description={isStudent ? 'Your daily attendance and date-wise history.' : 'View and override attendance by date, class, or school.'} columns={attendanceColumns} data={attendanceRows} loading={crud.loading} />
+        <DataTable
+          title="Attendance"
+          description={isStudent ? 'Your daily attendance and date-wise history.' : 'View and override attendance by date, class, or school.'}
+          columns={attendanceColumns}
+          data={attendanceRows}
+          loading={crud.loading}
+          headerAction={!isStudent ? addButton('Mark Attendance', crud.openCreateAttendanceModal, crud.students.length === 0) : undefined}
+          onRowClick={!isStudent ? crud.openEditAttendanceModal : undefined}
+        />
       </div>
     );
   }
@@ -516,7 +591,15 @@ export default function DashboardSectionContent({
             </select>
           </CardContent>
         </Card>
-        <DataTable title="Fees" description={isStudent ? 'Your monthly fee breakdown and paid/unpaid status.' : 'Assign monthly fees, update payment status, and track student payments.'} columns={feeColumns} data={feeRows} loading={crud.loading} />
+        <DataTable
+          title="Fees"
+          description={isStudent ? 'Your monthly fee breakdown and paid/unpaid status.' : 'Assign monthly fees, update payment status, and track student payments.'}
+          columns={feeColumns}
+          data={feeRows}
+          loading={crud.loading}
+          headerAction={isAdminUser ? addButton('Assign Fee', crud.openCreateFeeModal, crud.students.length === 0) : undefined}
+          onRowClick={isAdminUser ? crud.openEditFeeModal : undefined}
+        />
       </div>
     );
   }
@@ -534,18 +617,56 @@ export default function DashboardSectionContent({
             </select>
           </CardContent>
         </Card>
-        <DataTable title="Teacher Salaries" description="Assign salary records, update paid/unpaid status, and track salary totals." columns={salaryColumns} data={salaryRows} loading={crud.loading} />
+        <DataTable
+          title="Teacher Salaries"
+          description="Assign salary records, update paid/unpaid status, and track salary totals."
+          columns={salaryColumns}
+          data={salaryRows}
+          loading={crud.loading}
+          headerAction={isAdminUser ? addButton('Assign Salary', crud.openCreateSalaryModal, crud.teachers.length === 0) : undefined}
+          onRowClick={isAdminUser ? crud.openEditSalaryModal : undefined}
+        />
       </div>
     );
   }
   if (activeSection === 'schedule') {
-    return <DataTable title="Class Schedule" description={isStudent ? 'Your class schedule.' : 'Manage class-wise schedules.'} columns={scheduleColumns} data={crud.schedules} loading={crud.loading} />;
+    return (
+      <DataTable
+        title="Class Schedule"
+        description={isStudent ? 'Your class schedule.' : 'Manage class-wise schedules.'}
+        columns={scheduleColumns}
+        data={crud.schedules}
+        loading={crud.loading}
+        headerAction={!isStudent ? addButton('Add Schedule', crud.openCreateScheduleModal, crud.classes.length === 0) : undefined}
+        onRowClick={!isStudent ? crud.openEditScheduleModal : undefined}
+      />
+    );
   }
   if (activeSection === 'work') {
-    return <DataTable title="Class Work" description={isStudent ? 'Your assigned class work.' : 'Manage class work for assigned classes.'} columns={workColumns} data={crud.work} loading={crud.loading} />;
+    return (
+      <DataTable
+        title="Class Work"
+        description={isStudent ? 'Your assigned class work.' : 'Manage class work for assigned classes.'}
+        columns={workColumns}
+        data={crud.work}
+        loading={crud.loading}
+        headerAction={!isStudent ? addButton('Add Work', crud.openCreateWorkModal, crud.classes.length === 0) : undefined}
+        onRowClick={!isStudent ? crud.openEditWorkModal : undefined}
+      />
+    );
   }
   if (activeSection === 'results') {
-    return <DataTable title="Marks & Results" description={isStudent ? 'Your marks and test history.' : 'Add and update student marks.'} columns={resultColumns} data={crud.results} loading={crud.loading} />;
+    return (
+      <DataTable
+        title="Marks & Results"
+        description={isStudent ? 'Your marks and test history.' : 'Add and update student marks.'}
+        columns={resultColumns}
+        data={crud.results}
+        loading={crud.loading}
+        headerAction={!isStudent ? addButton('Add Result', crud.openCreateResultModal, crud.students.length === 0) : undefined}
+        onRowClick={!isStudent ? crud.openEditResultModal : undefined}
+      />
+    );
   }
   if (activeSection === 'reports') {
     const reportStats: StatCard[] = [

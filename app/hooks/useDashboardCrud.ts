@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { USER_ROLES } from '../constants/roles';
-import * as api from '../services/api';
+import { USER_ROLES } from '@/app/constants/roles';
+import * as api from '@/app/services/api';
 import type {
   ActivityResponse,
   AttendanceResponse,
@@ -27,7 +27,7 @@ import type {
   UserResponse,
   WorkResponse,
   WorkRow,
-} from '../types';
+} from '@/app/types';
 
 export type SchoolFormState = Pick<SchoolRow, 'name' | 'address' | 'status'>;
 export type ClassFormState = Pick<ClassRow, 'name' | 'section' | 'description' | 'schoolId' | 'teacherId' | 'status'>;
