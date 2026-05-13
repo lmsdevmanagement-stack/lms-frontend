@@ -18,8 +18,9 @@ export default function SalaryModal({ crud }: SalaryModalProps) {
       title={crud.editingSalaryId ? 'Edit Salary' : 'Assign Teacher Salary'}
       description="Assign teacher salaries and track paid or unpaid status."
       onClose={() => crud.setSalaryModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Teacher">
           <select
             className={selectClassName}
@@ -56,6 +57,10 @@ export default function SalaryModal({ crud }: SalaryModalProps) {
           disabled={!crud.salaryForm.teacherId || !crud.salaryForm.month || crud.salaryForm.amount <= 0}
           onCancel={() => crud.setSalaryModalOpen(false)}
           onSubmit={crud.saveSalary}
+          onSecondarySubmit={!crud.editingSalaryId ? async () => {
+            await crud.saveSalary();
+            crud.openCreateSalaryModal();
+          } : undefined}
         />
       </div>
     </Modal>

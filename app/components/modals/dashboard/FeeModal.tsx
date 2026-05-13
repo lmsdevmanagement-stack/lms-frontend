@@ -18,8 +18,9 @@ export default function FeeModal({ crud }: FeeModalProps) {
       title={crud.editingFeeId ? 'Edit Fee' : 'Assign Monthly Fee'}
       description="Assign monthly fees and track payment status."
       onClose={() => crud.setFeeModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Student">
           <select className={selectClassName} value={crud.feeForm.studentId} disabled={Boolean(crud.editingFeeId)} onChange={(event) => crud.setFeeForm({ ...crud.feeForm, studentId: Number(event.target.value) })}>
             <option value={0}>Select student</option>
@@ -47,6 +48,10 @@ export default function FeeModal({ crud }: FeeModalProps) {
           disabled={!crud.feeForm.studentId || !crud.feeForm.month || crud.feeForm.amount <= 0}
           onCancel={() => crud.setFeeModalOpen(false)}
           onSubmit={crud.saveFee}
+          onSecondarySubmit={!crud.editingFeeId ? async () => {
+            await crud.saveFee();
+            crud.openCreateFeeModal();
+          } : undefined}
         />
       </div>
     </Modal>

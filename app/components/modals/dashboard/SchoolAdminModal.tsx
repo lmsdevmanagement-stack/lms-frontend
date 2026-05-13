@@ -19,8 +19,9 @@ export default function SchoolAdminModal({ crud }: SchoolAdminModalProps) {
       title={crud.editingSchoolAdminId ? 'Edit School Admin' : 'Create School Admin'}
       description="Add an admin user for this school. The admin will be scoped to the selected organization."
       onClose={() => crud.setSchoolAdminModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="School">
           <select
             className={selectClassName}
@@ -65,6 +66,10 @@ export default function SchoolAdminModal({ crud }: SchoolAdminModalProps) {
           disabled={disabled}
           onCancel={() => crud.setSchoolAdminModalOpen(false)}
           onSubmit={crud.saveSchoolAdmin}
+          onSecondarySubmit={!crud.editingSchoolAdminId ? async () => {
+            await crud.saveSchoolAdmin();
+            crud.openCreateSchoolAdminModal();
+          } : undefined}
         />
       </div>
     </Modal>

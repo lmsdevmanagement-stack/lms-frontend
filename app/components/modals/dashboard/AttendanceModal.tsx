@@ -18,8 +18,9 @@ export default function AttendanceModal({ crud }: AttendanceModalProps) {
       title={crud.editingAttendanceId ? 'Override Attendance' : 'Mark Attendance'}
       description="Record or override a student attendance entry."
       onClose={() => crud.setAttendanceModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Student">
           <select className={selectClassName} value={crud.attendanceForm.studentId} disabled={Boolean(crud.editingAttendanceId)} onChange={(event) => crud.setAttendanceForm({ ...crud.attendanceForm, studentId: Number(event.target.value) })}>
             <option value={0}>Select student</option>
@@ -46,6 +47,10 @@ export default function AttendanceModal({ crud }: AttendanceModalProps) {
           disabled={!crud.attendanceForm.studentId || !crud.attendanceForm.date}
           onCancel={() => crud.setAttendanceModalOpen(false)}
           onSubmit={crud.saveAttendance}
+          onSecondarySubmit={!crud.editingAttendanceId ? async () => {
+            await crud.saveAttendance();
+            crud.openCreateAttendanceModal();
+          } : undefined}
         />
       </div>
     </Modal>

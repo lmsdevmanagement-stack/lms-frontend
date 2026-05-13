@@ -18,8 +18,9 @@ export default function ExpenseModal({ crud }: ExpenseModalProps) {
       title={crud.editingExpenseId ? 'Edit Expense' : 'Add Expense'}
       description="Record organization or school expenses."
       onClose={() => crud.setExpenseModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Title">
           <Input value={crud.expenseForm.title} onChange={(event) => crud.setExpenseForm({ ...crud.expenseForm, title: event.target.value })} />
         </FormField>
@@ -54,6 +55,10 @@ export default function ExpenseModal({ crud }: ExpenseModalProps) {
           disabled={!crud.expenseForm.title || crud.expenseForm.amount <= 0}
           onCancel={() => crud.setExpenseModalOpen(false)}
           onSubmit={crud.saveExpense}
+          onSecondarySubmit={!crud.editingExpenseId ? async () => {
+            await crud.saveExpense();
+            crud.openCreateExpenseModal();
+          } : undefined}
         />
       </div>
     </Modal>

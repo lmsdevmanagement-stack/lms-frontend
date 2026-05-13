@@ -20,8 +20,9 @@ export default function CreateStudentModal({ crud, isSuperAdmin }: CreateStudent
       title="Create Student"
       description="Manage student account and access status."
       onClose={() => crud.setStudentModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <StudentFormFields crud={crud} isSuperAdmin={isSuperAdmin} showPassword />
         <ModalActions
           submitLabel="Create Student"
@@ -29,6 +30,10 @@ export default function CreateStudentModal({ crud, isSuperAdmin }: CreateStudent
           disabled={disabled}
           onCancel={() => crud.setStudentModalOpen(false)}
           onSubmit={crud.saveStudent}
+          onSecondarySubmit={async () => {
+            await crud.saveStudent();
+            crud.openCreateStudentModal();
+          }}
         />
       </div>
     </Modal>

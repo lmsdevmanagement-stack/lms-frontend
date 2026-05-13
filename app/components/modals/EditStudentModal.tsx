@@ -20,8 +20,9 @@ export default function EditStudentModal({ crud, isSuperAdmin }: EditStudentModa
       title="Edit Student"
       description="Manage student account and access status."
       onClose={() => crud.setStudentModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <StudentFormFields crud={crud} isSuperAdmin={isSuperAdmin} />
         <ModalActions
           submitLabel="Save Changes"

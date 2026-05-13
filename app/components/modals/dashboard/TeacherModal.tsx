@@ -19,8 +19,9 @@ export default function TeacherModal({ crud, isSuperAdmin }: TeacherModalProps) 
       title={crud.editingTeacherId ? 'Edit Teacher' : 'Create Teacher'}
       description="Manage teacher account and access status."
       onClose={() => crud.setTeacherModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Full Name">
           <Input value={crud.teacherForm.name} onChange={(event) => crud.setTeacherForm({ ...crud.teacherForm, name: event.target.value })} />
         </FormField>
@@ -73,6 +74,10 @@ export default function TeacherModal({ crud, isSuperAdmin }: TeacherModalProps) 
           disabled={!crud.teacherForm.name || !crud.teacherForm.email || (isSuperAdmin && !crud.teacherForm.schoolId)}
           onCancel={() => crud.setTeacherModalOpen(false)}
           onSubmit={crud.saveTeacher}
+          onSecondarySubmit={!crud.editingTeacherId ? async () => {
+            await crud.saveTeacher();
+            crud.openCreateTeacherModal();
+          } : undefined}
         />
       </div>
     </Modal>

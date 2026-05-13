@@ -19,8 +19,9 @@ export default function ScheduleModal({ crud }: ScheduleModalProps) {
       title={crud.editingScheduleId ? 'Edit Schedule' : 'Add Schedule'}
       description="Manage class schedule."
       onClose={() => crud.setScheduleModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Class">
           <select
             className={selectClassName}
@@ -47,7 +48,7 @@ export default function ScheduleModal({ crud }: ScheduleModalProps) {
             {weekdays.map((day) => <option key={day} value={day}>{day}</option>)}
           </select>
         </FormField>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 md:col-span-2">
           <FormField label="Start Time">
             <Input type="time" value={crud.scheduleForm.startTime} onChange={(event) => crud.setScheduleForm({ ...crud.scheduleForm, startTime: event.target.value })} />
           </FormField>
@@ -64,6 +65,10 @@ export default function ScheduleModal({ crud }: ScheduleModalProps) {
           disabled={!crud.scheduleForm.classId || !crud.scheduleForm.subject}
           onCancel={() => crud.setScheduleModalOpen(false)}
           onSubmit={crud.saveSchedule}
+          onSecondarySubmit={!crud.editingScheduleId ? async () => {
+            await crud.saveSchedule();
+            crud.openCreateScheduleModal();
+          } : undefined}
         />
       </div>
     </Modal>

@@ -17,8 +17,9 @@ export default function WorkModal({ crud }: WorkModalProps) {
       title={crud.editingWorkId ? 'Edit Class Work' : 'Add Class Work'}
       description="Manage class work."
       onClose={() => crud.setWorkModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Class">
           <select
             className={selectClassName}
@@ -52,6 +53,10 @@ export default function WorkModal({ crud }: WorkModalProps) {
           disabled={!crud.workForm.classId || !crud.workForm.title}
           onCancel={() => crud.setWorkModalOpen(false)}
           onSubmit={crud.saveWork}
+          onSecondarySubmit={!crud.editingWorkId ? async () => {
+            await crud.saveWork();
+            crud.openCreateWorkModal();
+          } : undefined}
         />
       </div>
     </Modal>

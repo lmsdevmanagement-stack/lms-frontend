@@ -17,8 +17,9 @@ export default function ResultModal({ crud }: ResultModalProps) {
       title={crud.editingResultId ? 'Edit Result' : 'Add Result'}
       description="Manage marks and tests."
       onClose={() => crud.setResultModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <FormField label="Student">
           <select
             className={selectClassName}
@@ -41,7 +42,7 @@ export default function ResultModal({ crud }: ResultModalProps) {
         <FormField label="Subject">
           <Input value={crud.resultForm.subject} onChange={(event) => crud.setResultForm({ ...crud.resultForm, subject: event.target.value })} />
         </FormField>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 md:col-span-2">
           <FormField label="Marks">
             <Input type="number" value={crud.resultForm.marksObtained} onChange={(event) => crud.setResultForm({ ...crud.resultForm, marksObtained: Number(event.target.value) })} />
           </FormField>
@@ -61,6 +62,10 @@ export default function ResultModal({ crud }: ResultModalProps) {
           disabled={!crud.resultForm.studentId || !crud.resultForm.examName || !crud.resultForm.subject}
           onCancel={() => crud.setResultModalOpen(false)}
           onSubmit={crud.saveResult}
+          onSecondarySubmit={!crud.editingResultId ? async () => {
+            await crud.saveResult();
+            crud.openCreateResultModal();
+          } : undefined}
         />
       </div>
     </Modal>

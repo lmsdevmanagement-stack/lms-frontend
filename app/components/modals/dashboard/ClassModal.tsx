@@ -21,8 +21,9 @@ export default function ClassModal({ crud, isSuperAdmin }: ClassModalProps) {
       title={crud.editingClassId ? 'Edit Class' : 'Create Class'}
       description="Manage class details for student assignment."
       onClose={() => crud.setClassModalOpen(false)}
+      size="wide"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         {isSuperAdmin && (
           <FormField label="School">
             <select className={selectClassName} value={crud.classForm.schoolId} onChange={(event) => crud.setClassForm({ ...crud.classForm, schoolId: Number(event.target.value) })}>
@@ -61,6 +62,10 @@ export default function ClassModal({ crud, isSuperAdmin }: ClassModalProps) {
           disabled={disabled}
           onCancel={() => crud.setClassModalOpen(false)}
           onSubmit={crud.saveClass}
+          onSecondarySubmit={!crud.editingClassId ? async () => {
+            await crud.saveClass();
+            crud.openCreateClassModal();
+          } : undefined}
         />
       </div>
     </Modal>

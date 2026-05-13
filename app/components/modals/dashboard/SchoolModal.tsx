@@ -39,6 +39,10 @@ export default function SchoolModal({ crud }: SchoolModalProps) {
           disabled={!crud.schoolForm.name}
           onCancel={() => crud.setSchoolModalOpen(false)}
           onSubmit={crud.saveSchool}
+          onSecondarySubmit={!crud.editingSchoolId ? async () => {
+            await crud.saveSchool();
+            crud.openCreateSchoolModal();
+          } : undefined}
         />
       </div>
     </Modal>
